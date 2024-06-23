@@ -1,0 +1,36 @@
+ALGORITHME algo_sac_a_dos_optimise(objets, capacite_max)
+    n <- taille(objets)
+    capacite_max <- capacite_max * 100  // Convertir la capacité maximale en entier pour éviter les problèmes de flottants
+
+    // Initialiser le tableau dp et le tableau keep
+    dp <- tableau de taille (capacite_max + 1) initialisé à 0
+    keep <- matrice de taille (n) x (capacite_max + 1) initialisée à False
+
+    // Remplir le tableau dp
+    POUR i de 0 à n-1
+        masse <- objets[i].masse * 100  // Convertir la masse de l'objet en entier
+        utilite <- objets[i].utilite
+        POUR w de capacite_max à masse-1 PAR -1
+            SI dp[w] < dp[w - masse] + utilite ALORS
+                dp[w] <- dp[w - masse] + utilite
+                keep[i][w] <- True
+            FIN SI
+        FIN POUR
+    FIN POUR
+
+    // Backtracking pour trouver les objets sélectionnés
+    w <- capacite_max
+    objets_selectionnes <- liste vide
+    masse_totale <- 0
+
+    POUR i de n-1 à 0 PAR -1
+        SI keep[i][w] ALORS
+            ajouter objets[i].nom à objets_selectionnes
+            masse_totale <- masse_totale + objets[i].masse
+            w <- w - (objets[i].masse * 100)
+        FIN SI
+    FIN POUR
+
+    utilite_totale <- dp[capacite_max]
+    retourner objets_selectionnes, utilite_totale, masse_totale
+FIN ALGORITHME
