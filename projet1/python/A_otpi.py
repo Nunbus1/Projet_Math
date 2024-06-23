@@ -36,10 +36,8 @@ def algo_sac_a_dos_optimise(objets, capacite_max):
 chemin_fichier = 'projet1/data/Tableau données sac à dos. Vélo.xlsx'
 data = pd.read_excel(chemin_fichier)
 
-# Définir la capacité maximale du sac à dos
-capacite_max = 2  # Par exemple
+capacite_max = 2  
 
-# Mesurer le temps de l'exécution de l'algorithme
 debut = time.time()
 objets_selectionnes, utilite_totale, masse_totale = algo_sac_a_dos_optimise(data, capacite_max)
 fin = time.time()
