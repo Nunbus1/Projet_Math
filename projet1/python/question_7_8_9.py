@@ -81,5 +81,11 @@ print(df_results)
 
 
 # Sauvegarder le DataFrame dans un fichier CSV
-df_results.to_csv('Projet_Math/projet1/data/resultats_algo_A.csv', index=False)
+#Pour ajuster le chemin d'accès
+chemin_csv = '/../data/resultat_algo_A.csv'
+
+script_dir_csv = os.path.dirname(os.path.abspath(__file__))
+script_dir_csv, file_dir = getPath(script_dir_csv, chemin_csv)
+adresse =os.path.join(script_dir + file_dir)
+df_results.to_csv(adresse, index=False)
 print("Les résultats ont été enregistrés dans 'resultats.csv'.")

@@ -47,8 +47,16 @@ print("question 11-12")
 chemin_fichier = '/../data/Tableau données sac à dos. Vélo.xlsx'  
 
 #Pour ajuster le chemin d'accès
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
+print("eeeeeeeeeeeeeeeeeeeeeeeeee")
+print(script_dir)
+print("ffffffffffffffffffffffffffffffffffff")
 script_dir, file_dir = getPath(script_dir, chemin_fichier)
+print("pppppppppppppppppppppppppp")
+print(script_dir)
+print("mmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+print(file_dir)
 data = pd.read_excel(os.path.join(script_dir + chemin_fichier))
 
 
@@ -111,6 +119,14 @@ pd.set_option('display.max_rows', None)
 print(df_results)
 
 # Sauvegarder le DataFrame dans un fichier CSV
-df_results.to_csv('Projet_Math/projet1/data/resultats_algo_B.csv', index=False)
+
+
+#Pour ajuster le chemin d'accès
+chemin_csv = '/../data/resultat_algo_B.csv'
+
+script_dir_csv = os.path.dirname(os.path.abspath(__file__))
+script_dir_csv, file_dir = getPath(script_dir_csv, chemin_csv)
+adresse =os.path.join(script_dir + file_dir)
+df_results.to_csv(adresse, index=False)
 print("Les résultats ont été enregistrés dans 'resultats.csv'.")
 
