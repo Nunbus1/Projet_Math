@@ -1,2 +1,3 @@
 *BinPacking*
 *.venv
+*__pycache__

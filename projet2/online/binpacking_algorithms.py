@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from bin_item import Item, Bin
 from decimal import *
+from math import floor
 
 
 def next_fit(elements, dimension=1):
@@ -55,10 +56,25 @@ def best_fit(items, dimension=1):
 #			bins[j-1].append(item)
 #	return [len(bin) for bin in bins]
 
-#def harmonic(items, M=10, dimension=1):
-#	m_k = [0 for _ in range(M)]
-#	bins = [[Bin(dimension)] for k in range(M)]
-#	for i in range(1, n+1): # TODO: normalize items
+def harmonic_k(a, M=10, dimension=1):
+	m_k = [0 for _ in range(M+1)]
+	bins = [[Bin(dimension)] for k in range(M+1)]
+	normalize_bin = Bin(dimension)
+	for i in range(len(a)):
+		k = floor(normalize_bin.get_total_volume()/a[i].get_volume(dimension)) # Find k & normalize size
+		if 1<=k and k<M:
+			if bins[k][-1].can_fit(a[i]):
+				bins[k].add_item(a[i])
+			else:
+				bins[k].append(Bin(dimension))
+				bins[k][-1].add_item(a[i])
+		else:
+			if bins[M][-1].can_fit(a[i]):
+				bins[M][-1].add_item(a[i])
+			else:
+				bins[M].append(Bin(dimension))
+				bins[M][-1].add_item(a[i])
+	return bins
 
 def refined_harmonic(elements, dimension=1): # https://en.wikipedia.org/wiki/Harmonic_bin_packing#Refined-Harmonic_(RH)
 	# i/(j+1), 1/j

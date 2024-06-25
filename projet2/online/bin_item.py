@@ -15,6 +15,9 @@ class Item:
 		if y != None: self.dims.append(y)
 		if z != None: self.dims.append(z)
 
+	def get_volume(self, dim_cut):
+		return Decimal(reduce(lambda x, y: x*y, self.dims[:dim_cut]))
+
 	def __repr__(self):
 		return f"<Item[{self.numero}] '{self.nom}' ({self.x}, {self.y}, {self.z})>"
 
@@ -37,7 +40,7 @@ class Bin:
 
 	def add_item(self, item):
 		self.items.append(item)
-		self.used_volume += Decimal(reduce(lambda x, y: x*y, item.dims[:self.dimensions]))
+		self.used_volume += item.get_volume(self.dimensions)
 
 	def get_items(self):
 		return self.items
@@ -49,7 +52,7 @@ class Bin:
 		return self.used_volume
 
 	def can_fit(self, new_item):
-		return self.get_used_volume() + Decimal(reduce(lambda x, y: x*y, new_item.dims[:self.dimensions])) < self.get_total_volume()
+		return self.get_used_volume() + new_item.get_volume(self.dimensions) < self.get_total_volume()
 
 	def is_empty(self):
 		return len(self.items) == 0
