@@ -1,13 +1,21 @@
 import pandas as pd
 import time
+import os
+from get_path import getPath
 from math import prod
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # Charger les données depuis le fichier Excel
-file_path = 'projet2/data/Données marchandises.xlsx'
-data = pd.read_excel(file_path)
+# Charger le fichier Excel
+chemin_fichier = '/../data/Données marchandises.xlsx' 
 
+#Pour ajuster le chemin d'accès
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+script_dir, file_dir = getPath(script_dir, chemin_fichier)
+
+data = pd.read_excel(os.path.join(script_dir + chemin_fichier))
 # Définir les dimensions maximales du conteneur (en mètres)
 bin_dims = (11.583, 2.294, 2.569)
 
