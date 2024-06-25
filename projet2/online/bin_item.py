@@ -22,46 +22,37 @@ class Bin:
 	x = Decimal("11.583")
 	y = Decimal("2.294")
 	z = Decimal("2.569")
+	dims = (x, y, z)
 	#box = fcl.Box(x, y, z)
 
 	def __init__(self, dimensions, items=list(), bb=list()):
 		self.dimensions = dimensions
 		self.items = items
 		self.is_open = True
-		self.dims = [self.x]
-		if dimensions >= 2: self.dims.append(self.y)
-		if dimensions >= 3: self.dims.append(self.z)
+		self.used_volume = Decimal(sum([reduce(lambda x, y: x*y, item.dims[:self.dimensions]) for item in self.items]))
+		self.total_volume = Decimal(reduce(lambda x, y: x*y, self.dims[:self.dimensions]))
 
 	def __repr__(self):
 		return f"<Bin dimensions:{self.dimensions} is_open:{self.is_open}>"
 
 	def add_item(self, item):
 		self.items.append(item)
+		self.used_volume += Decimal(reduce(lambda x, y: x*y, item.dims[:self.dimensions]))
 
 	def get_items(self):
 		return self.items
 
+	def get_total_volume(self):
+		return self.total_volume
+
+	def get_used_volume(self):
+		return self.used_volume
+
 	def can_fit(self, new_item):
-		#t= (sum([reduce(lambda x, y: x*y, item.dims) for item in self.items]) + reduce(lambda x, y: x*y, new_item.dims), reduce(lambda x, y: x*y, self.dims))
-		if self.dimensions == 1:
-			t2= (sum([item.x for item in self.items]) + new_item.x, self.x)
-#			if t != t2:
-#				print(self.dims)
-#				print(self.items)
-#				print(t, t2)
-			return t2[0] < t2[1]
-		elif self.dimensions == 2:
-			t2= (sum([item.x * item.y for item in self.items]) + new_item.x*new_item.y, self.x*self.y)
-#			if t != t2:
-#				print(t, t2)
-			return t2[0] < t2[1]
-		elif self.dimensions == 3:
-			t2= (sum([item.x * item.y * item.z for item in self.items]) + new_item.x*new_item.y*new_item.z, self.x*self.y*self.z)
-#			if t != t2:
-#				print(t, t2)
-			return t2[0] < t2[1]
-		else:
-			return "ERROR"
+		return self.get_used_volume() + Decimal(reduce(lambda x, y: x*y, new_item.dims[:self.dimensions])) < self.get_total_volume()
 
 	def is_empty(self):
 		return len(self.items) == 0
+
+	def get_remaining(self):
+		return self.get_total_volume() - self.get_used_volume()

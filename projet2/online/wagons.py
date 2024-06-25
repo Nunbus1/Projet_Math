@@ -21,16 +21,23 @@ if __name__ == "__main__":
 	data = pd.read_excel(os.path.join(script_dir + file_dir))
 	items = list()
 	for index, row in data.iterrows():
-		items.append(Item(row[0], row[1], row[2], row[3], row[4]))
+		items.append(Item(row[0], row[1], Decimal(row[2]), Decimal(row[3]), Decimal(row[4])))
 		#res = next_fit(bins[bin_i], it)
 		#if res:
+	print("Next fit")
 	for i in range(1, 4):
 		start = time.time()
 		bins = next_fit(items, i)
 		print(len(bins))
-		#for b in bins:
-		#	print(b.get_items())
 		print(i, time.time()-start)
+	print("Harmonic-k")
+	"""
+	print("Best fit") # Is broken
+	for i in range(1, 4):
+		start = time.time()
+		bins = best_fit(items, i)
+		print(len(bins))
+		print(i, time.time()-start)"""
 	#print(data.head())
 	#print(bins)
 	#print([x for x in bins if x.is_open == True])

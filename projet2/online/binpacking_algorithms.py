@@ -15,8 +15,50 @@ def next_fit(elements, dimension=1):
 			bin_i += 1
 	return bins
 
-#def harmonic_k():
-	
+def best_fit(items, dimension=1):
+	bins = list()
+	bins.append(Bin(dimension))
+	for item in items:
+		best_bin = None
+		for bin_ in bins:
+			if bin_.get_remaining() > 0 and (best_bin is None or bin_.get_used_volume() < best_bin.get_used_volume()):
+				best_bin = bin_
+		if best_bin is None:
+			new_bin = Bin(dimension)
+			#new_bin.size += item
+			new_bin.add_item(item)
+			bins.append(new_bin)
+		else:
+			#best_bin.size += item
+			best_bin.add_item(item)
+
+	return bins
+
+#def harmonic_k(items, k, dimension=1):
+#	#bins = [[] for _ in range(k)]
+#	bins = list()
+#	bins.append(Bin(dimension))
+#	for item in items:
+#		if item < 1 / (k - 1):  # I_1-item
+#			j = 1
+#		elif item < 1 / (k - 2):  # I_2-items
+#			j = 2
+#		elif item < 1 / (k - 3):  # I_3-items
+#			j = 3
+#		else:  # I_k-item
+#			j = k
+#
+#		for bin.items in bins[j-1]:
+#			if bin + item <= 1:
+#				break
+#		else:
+#			bins[j-1].append(item)
+#	return [len(bin) for bin in bins]
+
+#def harmonic(items, M=10, dimension=1):
+#	m_k = [0 for _ in range(M)]
+#	bins = [[Bin(dimension)] for k in range(M)]
+#	for i in range(1, n+1): # TODO: normalize items
 
 def refined_harmonic(elements, dimension=1): # https://en.wikipedia.org/wiki/Harmonic_bin_packing#Refined-Harmonic_(RH)
 	# i/(j+1), 1/j
