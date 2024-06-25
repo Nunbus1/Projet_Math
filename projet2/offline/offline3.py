@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # Charger les données depuis le fichier Excel
-# Charger le fichier Excel
 chemin_fichier = '/../data/Données marchandises.xlsx' 
 
-#Pour ajuster le chemin d'accès
+# Pour ajuster le chemin d'accès
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 script_dir, file_dir = getPath(script_dir, chemin_fichier)
@@ -70,26 +69,33 @@ def first_fit_decreasing_3d(data, bin_dims):
     total_items = sum(len(bin) for bin in bins)
     return bins, len(bins), total_volume, used_volume, unused_volume, total_items
 
-def plot_bin(bin, bin_dims, bin_index):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+def plot_bins_on_sheet(bins, bin_dims):
+    num_bins = len(bins)
+    num_cols = 4
+    num_rows = (num_bins + num_cols - 1) // num_cols
+
+    fig = plt.figure(figsize=(num_cols * 5, num_rows * 5))
     
-    # Définir les couleurs pour chaque item
-    colors = plt.cm.tab20.colors
+    for bin_index, bin in enumerate(bins):
+        ax = fig.add_subplot(num_rows, num_cols, bin_index + 1, projection='3d')
+        colors = plt.cm.tab20.colors
+        color_idx = 0
+        
+        for item in bin:
+            color = colors[color_idx % len(colors)]
+            plot_item(ax, item['position'], item['dimensions'], color)
+            color_idx += 1
+        
+        ax.set_xlim(0, bin_dims[0])
+        ax.set_ylim(0, bin_dims[1])
+        ax.set_zlim(0, bin_dims[2])
+        
+        ax.set_xlabel('Longueur')
+        ax.set_ylabel('Largeur')
+        ax.set_zlabel('Hauteur')
+        ax.set_title(f'Wagon {bin_index + 1} - Nombre d\'objets: {len(bin)}')
     
-    for i, item in enumerate(bin):
-        color = colors[i % len(colors)]
-        plot_item(ax, item['position'], item['dimensions'], color)
-    
-    # Définir les dimensions de l'axe
-    ax.set_xlim(0, bin_dims[0])
-    ax.set_ylim(0, bin_dims[1])
-    ax.set_zlim(0, bin_dims[2])
-    
-    ax.set_xlabel('Longueur')
-    ax.set_ylabel('Largeur')
-    ax.set_zlabel('Hauteur')
-    ax.set_title(f'Conteneur {bin_index + 1} - Nombre d\'objets: {len(bin)}')
+    plt.tight_layout()
     plt.show()
 
 def plot_item(ax, position, dimensions, color):
@@ -125,12 +131,12 @@ print(f"Volume total : {total_volume:.2f} mètres cubes")
 print(f"Volume occupé : {used_volume:.2f} mètres cubes")
 print(f"Volume non occupé : {unused_volume:.2f} mètres cubes")
 print(f"Temps de calcul : {end_time - start_time:.2f} secondes")
-
-# Afficher le nombre total de conteneurs (wagons) et le nombre total d'objets
 print(f"Nombre total de wagons utilisés : {num_bins}")
 print(f"Nombre total de conteneurs placés : {total_items}")
 
-# Visualiser chaque conteneur
+# Afficher le nombre total de conteneurs (wagons) et le nombre total d'objets
 for i, bin in enumerate(bins):
     print(f"Wagon {i + 1} - Nombre d'objets : {len(bin)}")
-    plot_bin(bin, bin_dims, i)
+
+# Visualiser chaque conteneur sur une feuille avec plusieurs sous-graphiques
+plot_bins_on_sheet(bins, bin_dims)
