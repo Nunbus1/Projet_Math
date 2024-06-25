@@ -2,7 +2,7 @@
 from decimal import *
 from functools import reduce
 import numpy as np
-#import fcl
+
 
 class Item:
 	def __init__(self, numero, nom, x, y=None, z=None):
@@ -26,9 +26,8 @@ class Bin:
 	y = Decimal("2.294")
 	z = Decimal("2.569")
 	dims = (x, y, z)
-	#box = fcl.Box(x, y, z)
 
-	def __init__(self, dimensions, items=list(), bb=list()):
+	def __init__(self, dimensions, items):
 		self.dimensions = dimensions
 		self.items = items
 		self.is_open = True
@@ -52,7 +51,7 @@ class Bin:
 		return self.used_volume
 
 	def can_fit(self, new_item):
-		return self.get_used_volume() + new_item.get_volume(self.dimensions) < self.get_total_volume()
+		return self.used_volume + new_item.get_volume(self.dimensions) < self.total_volume
 
 	def is_empty(self):
 		return len(self.items) == 0
