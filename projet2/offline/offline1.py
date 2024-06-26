@@ -6,37 +6,43 @@ from math import prod
 import matplotlib.pyplot as plt
 
 # Charger les données depuis le fichier Excel
-# Charger le fichier Excel
 chemin_fichier = '/../data/Données marchandises.xlsx' 
-
 #Pour ajuster le chemin d'accès
 script_dir = os.path.dirname(os.path.abspath(__file__))
 script_dir, file_dir = getPath(script_dir, chemin_fichier)
-
 data = pd.read_excel(os.path.join(script_dir + chemin_fichier))
 
 # Définir les dimensions maximales du conteneur (en mètres)
 bin_dims = (11.583,)
 
+# Fonction pour vérifier si un article peut être placé dans un conteneur à une position donnée sans chevauchement
 def can_place_in_bin(item_dims, bin, bin_dims, pos):
+    # Parcourt chaque article déjà placé dans le conteneur
     for placed_item in bin:
+        # Vérifie s'il y a un chevauchement entre l'article actuel et l'article déjà placé
         if check_overlap(item_dims, placed_item['dimensions'], pos, placed_item['position']):
+            # Si chevauchement détecté, retourne False
             return False
+    # Vérifie si l'article dépasse les limites du conteneur en x    
     return pos[0] + item_dims[0] <= bin_dims[0]
 
 def check_overlap(dim1, dim2, pos1, pos2):
+    #Initialisation des variables
     x1 = pos1[0]
     x2 = pos2[0]
     lx1 = dim1[0]
     lx2 = dim2[0]
+    #Vérification du chevauchement
     return not (x1 + lx1 <= x2 or x2 + lx2 <= x1)
 
 def first_fit_decreasing_1d(data, bin_dims):
+    #initialisation
     bins = []
+    # Placement des articles
     for _, item in data.iterrows():
         item_dims = (item['Longueur'],)
         placed = False
-
+        #Essai de placement dans les conteneurs existants
         for bin in bins:
             for x in range(int(bin_dims[0] - item_dims[0]) + 1):
                 if can_place_in_bin(item_dims, bin, bin_dims, (x,)):
@@ -45,14 +51,15 @@ def first_fit_decreasing_1d(data, bin_dims):
                     break
             if placed:
                 break
-        
+        #Création d'un nouveau conteneur
         if not placed:
             bins.append([{'dimensions': item_dims, 'position': (0,)}])
-    
+    #Calcul des métriques 
     total_length = len(bins) * bin_dims[0]
     used_length = sum(item['dimensions'][0] for bin in bins for item in bin)
     unused_length = total_length - used_length
     total_items = sum(len(bin) for bin in bins)
+    #Retour des résultats
     return bins, len(bins), total_length, used_length, unused_length, total_items
 
 def plot_bin(bin, bin_dims, bin_index):
@@ -79,10 +86,12 @@ def plot_item(ax, position, dimensions, color):
     rect = plt.Rectangle((x, 0), dx, 1, linewidth=1, edgecolor='r', facecolor=color, alpha=0.25)
     ax.add_patch(rect)
 
+#Mesure du temps de calcul et appel de la fonction
 start_time = time.time()
 bins, num_bins, total_length, used_length, unused_length, total_items = first_fit_decreasing_1d(data, bin_dims)
 end_time = time.time()
 
+#Affichage des résultats
 print(f"Nombre de wagons : {num_bins}")
 print(f"Longueur totale : {total_length:.2f} mètres")
 print(f"Longueur occupée : {used_length:.2f} mètres")
