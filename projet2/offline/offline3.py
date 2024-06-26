@@ -1,40 +1,51 @@
 import pandas as pd
 import time
 import os
-from get_path import getPath
+import numpy as np
 from math import prod
+from get_path import getPath
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # Charger les données depuis le fichier Excel
-chemin_fichier = '/../data/Données marchandises.xlsx' 
+chemin_fichier = '/../data/Données marchandises.xlsx'
 
 # Pour ajuster le chemin d'accès
 script_dir = os.path.dirname(os.path.abspath(__file__))
-
 script_dir, file_dir = getPath(script_dir, chemin_fichier)
-
 data = pd.read_excel(os.path.join(script_dir + chemin_fichier))
+
 # Définir les dimensions maximales du conteneur (en mètres)
 bin_dims = (11.583, 2.294, 2.569)
+longueur_maximale, largeur_maximale, hauteur_maximale = bin_dims
+
+# Résolution de la grille
+resolution = 10
 
 def calculate_volume(row):
     return row['Longueur'] * row['Largeur'] * row['Hauteur']
 
-def can_place_in_bin(item_dims, bin, bin_dims, pos):
-    for placed_item in bin:
-        if check_overlap(item_dims, placed_item['dimensions'], pos, placed_item['position']):
-            return False
-    return pos[0] + item_dims[0] <= bin_dims[0] and pos[1] + item_dims[1] <= bin_dims[1] and pos[2] + item_dims[2] <= bin_dims[2]
+def generate_rotations(dimensions):
+    l, w, h = dimensions
+    return [
+        (l, w, h), (l, h, w), 
+        (w, l, h), (w, h, l), 
+        (h, l, w), (h, w, l)
+    ]
 
-def check_overlap(dim1, dim2, pos1, pos2):
-    x1, y1, z1 = pos1
-    x2, y2, z2 = pos2
-    lx1, ly1, lz1 = dim1
-    lx2, ly2, lz2 = dim2
-    return not (x1 + lx1 <= x2 or x2 + lx2 <= x1 or
-                y1 + ly1 <= y2 or y2 + ly2 <= y1 or
-                z1 + lz1 <= z2 or z2 + lz2 <= z1)
+def peut_placer_volume(conteneur, longueur, largeur, hauteur, x, y, z):
+    if x + longueur > longueur_maximale or y + largeur > largeur_maximale or z + hauteur > hauteur_maximale:
+        return False
+    return np.all(conteneur[
+        int(x*resolution):int((x + longueur)*resolution),
+        int(y*resolution):int((y + largeur)*resolution),
+        int(z*resolution):int((z + hauteur)*resolution)] == 0)
+
+def placer_dans_volume(conteneur, longueur, largeur, hauteur, x, y, z):
+    conteneur[
+        int(x*resolution):int((x + longueur)*resolution),
+        int(y*resolution):int((y + largeur)*resolution),
+        int(z*resolution):int((z + hauteur)*resolution)] = 1
 
 def first_fit_decreasing_3d(data, bin_dims):
     data['Volume'] = data.apply(calculate_volume, axis=1)
@@ -45,28 +56,32 @@ def first_fit_decreasing_3d(data, bin_dims):
         item_dims = (item['Longueur'], item['Largeur'], item['Hauteur'])
         placed = False
 
-        for bin in bins:
-            for x in range(int(bin_dims[0] - item_dims[0]) + 1):
-                for y in range(int(bin_dims[1] - item_dims[1]) + 1):
-                    for z in range(int(bin_dims[2] - item_dims[2]) + 1):
-                        if can_place_in_bin(item_dims, bin, bin_dims, (x, y, z)):
-                            bin.append({'dimensions': item_dims, 'position': (x, y, z)})
-                            placed = True
+        for bin_index, bin in enumerate(bins):
+            for rotation in generate_rotations(item_dims):
+                for x in np.arange(0, bin_dims[0] - rotation[0], 1/resolution):
+                    for y in np.arange(0, bin_dims[1] - rotation[1], 1/resolution):
+                        for z in np.arange(0, bin_dims[2] - rotation[2], 1/resolution):
+                            if peut_placer_volume(bin['matrix'], *rotation, x, y, z):
+                                placer_dans_volume(bin['matrix'], *rotation, x, y, z)
+                                bin['items'].append({'dimensions': rotation, 'position': (x, y, z)})
+                                placed = True
+                                break
+                        if placed:
                             break
                     if placed:
                         break
                 if placed:
                     break
-            if placed:
-                break
         
         if not placed:
-            bins.append([{'dimensions': item_dims, 'position': (0, 0, 0)}])
+            new_bin_matrix = np.zeros((int(bin_dims[0]*resolution), int(bin_dims[1]*resolution), int(bin_dims[2]*resolution)))
+            placer_dans_volume(new_bin_matrix, *item_dims, 0, 0, 0)
+            bins.append({'matrix': new_bin_matrix, 'items': [{'dimensions': item_dims, 'position': (0, 0, 0)}]})
     
     total_volume = len(bins) * prod(bin_dims)
-    used_volume = sum(prod(item['dimensions']) for bin in bins for item in bin)
+    used_volume = sum(prod(item['dimensions']) for bin in bins for item in bin['items'])
     unused_volume = total_volume - used_volume
-    total_items = sum(len(bin) for bin in bins)
+    total_items = sum(len(bin['items']) for bin in bins)
     return bins, len(bins), total_volume, used_volume, unused_volume, total_items
 
 def plot_bins_on_sheet(bins, bin_dims):
@@ -81,7 +96,7 @@ def plot_bins_on_sheet(bins, bin_dims):
         colors = plt.cm.tab20.colors
         color_idx = 0
         
-        for item in bin:
+        for item in bin['items']:
             color = colors[color_idx % len(colors)]
             plot_item(ax, item['position'], item['dimensions'], color)
             color_idx += 1
@@ -93,7 +108,7 @@ def plot_bins_on_sheet(bins, bin_dims):
         ax.set_xlabel('Longueur')
         ax.set_ylabel('Largeur')
         ax.set_zlabel('Hauteur')
-        ax.set_title(f'Wagon {bin_index + 1} - Nombre d\'objets: {len(bin)}')
+        ax.set_title(f'Wagon {bin_index + 1} - Nombre d\'objets: {len(bin["items"])}')
     
     plt.tight_layout()
     plt.show()
@@ -123,7 +138,10 @@ def plot_item(ax, position, dimensions, color):
     ax.add_collection3d(poly3d)
 
 start_time = time.time()
+
+# Utiliser FFD pour une solution initiale
 bins, num_bins, total_volume, used_volume, unused_volume, total_items = first_fit_decreasing_3d(data, bin_dims)
+
 end_time = time.time()
 
 print(f"Nombre de wagons : {num_bins}")
@@ -136,7 +154,7 @@ print(f"Nombre total de conteneurs placés : {total_items}")
 
 # Afficher le nombre total de conteneurs (wagons) et le nombre total d'objets
 for i, bin in enumerate(bins):
-    print(f"Wagon {i + 1} - Nombre d'objets : {len(bin)}")
+    print(f"Wagon {i + 1} - Nombre d'objets : {len(bin['items'])}")
 
 # Visualiser chaque conteneur sur une feuille avec plusieurs sous-graphiques
 plot_bins_on_sheet(bins, bin_dims)
