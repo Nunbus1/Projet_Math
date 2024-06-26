@@ -67,7 +67,7 @@ class Bin:
 
 	def can_fit(self, new_item, pos=None, overrides_liquid=False):
 		if self.contains_liquid or overrides_liquid:
-			return self.used_volume + new_item.get_volume(self.dimensions) < self.total_volume
+			return (self.used_volume + new_item.get_volume(self.dimensions) < self.total_volume,)
 		else:
 			for it in self.items:
 				if it.overlaps(new_item, pos, self.dimensions):
