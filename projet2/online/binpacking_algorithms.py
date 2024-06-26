@@ -10,9 +10,9 @@ import settings
 
 # UTILS
 def try_place(current_bin, item):
-	dimension, contains_liquid, mlt_proc = settings.get_all()
+	dimension, contains_liquid, mlt_proc, resolution = settings.get_all()
 	if dimension != 1 and not contains_liquid:
-		def travel_axis(current_binn, itemm, dim, pos, resolution=1):
+		def travel_axis(current_binn, itemm, dim, pos):
 			if dim == 0:
 				if current_binn.can_fit(itemm, pos):
 					return (True, pos)
@@ -20,9 +20,9 @@ def try_place(current_bin, item):
 					return (False,)
 			n_pos = pos.copy()
 			n_pos.append(0)
-			for i in range(int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/Decimal(resolution))):
-				n_pos[-1] = Decimal(resolution)*i
-				res = travel_axis(current_binn, itemm, dim-1, n_pos, resolution)
+			for i in range(int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/resolution)):
+				n_pos[-1] = resolution*i
+				res = travel_axis(current_binn, itemm, dim-1, n_pos)
 				if res[0]:
 					return res
 			return (False,)
@@ -33,7 +33,7 @@ def try_place(current_bin, item):
 
 # ONLINE
 def next_fit(items):
-	dimension, contains_liquid, mlt_proc = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
 	bins = list()
 	bin_i = 0
 	bins.append(Bin(dimension, list(), contains_liquid))
@@ -49,7 +49,7 @@ def next_fit(items):
 	return bins
 
 def best_fit(items):
-	dimension, contains_liquid, mlt_proc = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
 	bins_ = list()
 	bins_.append(Bin(dimension, list(), contains_liquid))
 	for item in items:
@@ -71,7 +71,7 @@ def best_fit(items):
 	return bins_
 
 def harmonic_k(a, M=10):
-	dimension, contains_liquid, mlt_proc = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
 	m_k = [0 for _ in range(M+1)]
 	bins = [[Bin(dimension, list(), contains_liquid)] for k in range(M+1)]
 	normalize_bin = Bin(dimension, list(), contains_liquid)
@@ -90,7 +90,7 @@ def harmonic_k(a, M=10):
 
 # OFFLINE
 def first_fit_decreasing(data):
-	dimension, contains_liquid, mlt_proc = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
 	def do_volume(row):
 		return Decimal(row['Longueur']) * Decimal(row['Largeur']) * Decimal(row['Hauteur'])
 
