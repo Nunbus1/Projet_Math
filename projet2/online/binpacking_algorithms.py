@@ -2,6 +2,8 @@
 from bin_item import Item, Bin
 from decimal import *
 from math import floor
+from birdseye import eye
+import multiprocessing as mp
 
 
 def next_fit(items, dimension=1, contains_liquid=True):
@@ -66,7 +68,7 @@ def harmonic_k(a, M=10, dimension=1, contains_liquid=True): # Is broken
 
 def try_place(current_bin, item, dimension=1, contains_liquid=True):
 	if dimension != 1 and not contains_liquid:
-		def travel_axis(current_binn, itemm, dim, pos, resolution=0.5):
+		def travel_axis(current_binn, itemm, dim, pos, resolution=0.1):
 			if dim == 0:
 				if current_binn.can_fit(itemm, pos):
 					return (True, pos)
@@ -95,21 +97,41 @@ def first_fit_decreasing(data, dimension=1, contains_liquid=True):
 		items.append(Item(row[0], row[1], Decimal(row[2]), Decimal(row[3]), Decimal(row[4])))
 	bins = list()
 	bins.append(Bin(dimension, list(), contains_liquid))
+	batch_size = 4*mp.cpu_count()
+	pool = mp.Pool()
 	for item in items:
 		placed = False
-		for b in bins:
-			res = try_place(b, item, dimension, contains_liquid)
-			placed = res[0]
+		#for i in range(0, len(bins), batch_size):
+			#maxi = i+batch_size
+			#if len(bins) < maxi: maxi = len(bins)
+			#for result in pool.starmap(try_place, [(bins[j], item, dimension, contains_liquid) for j in range(i, maxi)], chunksize=4):
+		i=0
+		for result in pool.starmap(try_place, [(b, item, dimension, contains_liquid) for b in bins], chunksize=4):
+			placed = result[0]
 			if placed:
-				if (not contains_liquid) and dimension > 1: item.set_position(res[1])
-				b.add_item(item)
+				if (not contains_liquid) and dimension > 1: item.set_position(result[1])
+				bins[i].add_item(item)
 				break
+			i += 1
 		if not placed:
 			if (not contains_liquid) and dimension > 1: item.set_position([0]*dimension)
 			bins.append(Bin(dimension, [item], contains_liquid))
+#	for item in items:
+#		placed = False
+#		for b in bins:
+#			res = try_place(b, item, dimension, contains_liquid)
+#			placed = res[0]
+#			if placed:
+#				if (not contains_liquid) and dimension > 1: item.set_position(res[1])
+#				b.add_item(item)
+#				break
+#		if not placed:
+#			if (not contains_liquid) and dimension > 1: item.set_position([0]*dimension)
+#			bins.append(Bin(dimension, [item], contains_liquid))
 	ret_data = list()
 	ret_data.append(("Total V", len(bins) * bins[0].total_volume))
 	ret_data.append(("Used V", sum([b.used_volume for b in bins])))
+	ret_data.append(("Remaining V", sum([b.get_remaining() for b in bins])))
 	ret_data.append(("Nombre wagons utilisés", len(bins))) # num_bins
 	ret_data.append(("Total items", sum([len(b.items) for b in bins]))) # total_items
 

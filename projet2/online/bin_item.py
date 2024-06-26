@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 from decimal import *
 from functools import reduce
-import numpy as np
 
 
 class Item:

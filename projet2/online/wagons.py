@@ -6,6 +6,7 @@ import os
 from get_path import getPath
 from binpacking_algorithms import *
 from decimal import *
+import multiprocessing as mp
 
 
 if __name__ == "__main__":
@@ -44,8 +45,16 @@ if __name__ == "__main__":
 #		print(i, time.time()-start)
 	# TODO: test w/collisions & test if item position is by reference
 	print("\n Offline")
+#	mp.set_start_method("forkserver") # w/o 0.32s, w/ 0.77s
+#	start = time.time()
+#	with mp.Pool(3) as p:
+#		ret = p.starmap(first_fit_decreasing, [(data, i, False) for i in range(1,4)])
+#		for r in ret:
+#			print(r[0][2])
+#	print("All", time.time()-start)
 	for i in range(1, 4):
 		start = time.time()
 		ret_data, bins = first_fit_decreasing(data, i, False)
-		print(ret_data[2])
+		for r in ret_data:
+			print(r)
 		print(i, time.time()-start)
