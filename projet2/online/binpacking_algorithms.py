@@ -2,7 +2,6 @@
 from bin_item import Item, Bin
 from decimal import *
 from math import floor
-from birdseye import eye
 
 
 def next_fit(items, dimension=1, contains_liquid=True):
@@ -67,7 +66,7 @@ def harmonic_k(a, M=10, dimension=1, contains_liquid=True): # Is broken
 
 def try_place(current_bin, item, dimension=1, contains_liquid=True):
 	if dimension != 1 and not contains_liquid:
-		def travel_axis(current_binn, itemm, dim, pos):
+		def travel_axis(current_binn, itemm, dim, pos, resolution=0.5):
 			if dim == 0:
 				if current_binn.can_fit(itemm, pos):
 					return (True, pos)
@@ -75,9 +74,9 @@ def try_place(current_bin, item, dimension=1, contains_liquid=True):
 					return (False,)
 			n_pos = pos.copy()
 			n_pos.append(0)
-			for i in range(int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim]) +1):
-				n_pos[-1] = i
-				res = travel_axis(current_binn, itemm, dim-1, n_pos)
+			for i in range(int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/Decimal(resolution))):
+				n_pos[-1] = Decimal(resolution)*i
+				res = travel_axis(current_binn, itemm, dim-1, n_pos, resolution)
 				if res[0]:
 					return res
 			return (False,)

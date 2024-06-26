@@ -24,10 +24,6 @@ class Item:
 		return self.position
 
 	def overlaps(self, item, pos, dimension):
-		# dim1: item.dims
-		# dim2: self.dims
-		# pos1: pos
-		# pos2: self.position
 		res = False
 		for i in range(dimension):
 			res = res or (pos[i] + item.dims[i] <= self.position[i] or self.position[i] + self.dims[i] <= pos[i])
