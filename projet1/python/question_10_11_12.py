@@ -47,16 +47,8 @@ print("question 11-12")
 chemin_fichier = '/../data/Tableau données sac à dos. Vélo.xlsx'  
 
 #Pour ajuster le chemin d'accès
-
 script_dir = os.path.dirname(os.path.abspath(__file__))
-print("eeeeeeeeeeeeeeeeeeeeeeeeee")
-print(script_dir)
-print("ffffffffffffffffffffffffffffffffffff")
 script_dir, file_dir = getPath(script_dir, chemin_fichier)
-print("pppppppppppppppppppppppppp")
-print(script_dir)
-print("mmmmmmmmmmmmmmmmmmmmmmmmmmmm")
-print(file_dir)
 data = pd.read_excel(os.path.join(script_dir + chemin_fichier))
 
 
