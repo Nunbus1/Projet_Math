@@ -68,18 +68,18 @@ def try_place(current_bin, item):
 			n_pos = pos.copy()
 			n_pos.append(0)
 			i_start = Decimal('0')
-			if dimension-dim+1 == 1: # OPT 2
-				items_test = current_bin.items.copy()
-				while items_test != []:
-					fits, it = current_binn.do_test_gap(items_test, itemm.dims)
-					if not fits:
-						i_start += it.position[0]
-						try:
-							items_test.remove(it)
-						except ValueError:
-							pass
-					else:
-						break
+#			if dimension-dim+1 == 1: # OPT 2
+#				items_test = current_bin.items.copy()
+#				while items_test != []:
+#					fits, it = current_binn.do_test_gap(items_test, itemm.dims)
+#					if not fits:
+#						i_start += it.position[0]
+#						try:
+#							items_test.remove(it)
+#						except ValueError:
+#							pass
+#					else:
+#						break
 			#for i in range(i_start, int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/resolution)):
 			for i in drange(i_start, current_binn.dims[dimension-dim]-itemm.dims[dimension-dim]+1, resolution):
 				n_pos[-1] = i
@@ -108,6 +108,48 @@ def next_fit(items):
 			item.set_position((None,[0]*dimension))
 			bins.append(Bin(dimension, [item], contains_liquid))
 			bin_i += 1
+	return bins
+
+def first_fit(items):
+	dimension, contains_liquid, mlt_proc, _, _ = settings.get_all()
+	def use_result(bins, i, item, result):
+		placed = result[0]
+		if placed:
+			item.set_position(result)
+			bins[i].add_item(item)
+		return placed
+
+	bins = list()
+	bins.append(Bin(dimension, list(), contains_liquid))
+	mlt_cond = mlt_proc and dimension != 1
+	if mlt_cond:
+		batch_size = 4*mp.cpu_count()
+		pool = mp.Pool()
+	for item in items:
+		auto_turn(item)
+		placed = False
+		if mlt_cond:
+			i=0
+			for result in pool.starmap(try_place, [(b, item) for b in bins], chunksize=4):
+				placed = use_result(bins, i, item, result)
+				i += 1
+				if placed:
+					break
+		else:
+			i=0
+			for b in bins:
+				result = try_place(b, item)
+				placed = use_result(bins, i, item, result)
+				i += 1
+				if placed:
+					break
+		if not placed:
+			item.set_position((None,[0]*dimension))
+			bins.append(Bin(dimension, [item], contains_liquid))
+	if mlt_cond:
+		pool.close()
+		pool.join()
+
 	return bins
 
 def best_fit(items):
@@ -170,48 +212,4 @@ def harmonic(a, M=10):
 		else:
 			a[i].set_position((None,[0]*dimension))
 			bins[k].append(Bin(dimension, [a[i]], contains_liquid))
-	return bins
-
-
-# OFFLINE
-def first_fit_decreasing(items):
-	dimension, contains_liquid, mlt_proc, _, _ = settings.get_all()
-	def use_result(bins, i, item, result):
-		placed = result[0]
-		if placed:
-			item.set_position(result)
-			bins[i].add_item(item)
-		return placed
-
-	bins = list()
-	bins.append(Bin(dimension, list(), contains_liquid))
-	mlt_cond = mlt_proc and dimension != 1
-	if mlt_cond:
-		batch_size = 4*mp.cpu_count()
-		pool = mp.Pool()
-	for item in items:
-		auto_turn(item)
-		placed = False
-		if mlt_cond:
-			i=0
-			for result in pool.starmap(try_place, [(b, item) for b in bins], chunksize=4):
-				placed = use_result(bins, i, item, result)
-				i += 1
-				if placed:
-					break
-		else:
-			i=0
-			for b in bins:
-				result = try_place(b, item)
-				placed = use_result(bins, i, item, result)
-				i += 1
-				if placed:
-					break
-		if not placed:
-			item.set_position((None,[0]*dimension))
-			bins.append(Bin(dimension, [item], contains_liquid))
-	if mlt_cond:
-		pool.close()
-		pool.join()
-
 	return bins

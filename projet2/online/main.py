@@ -13,8 +13,9 @@ from decimal import *
 from re import sub
 
 
-online_algos = ['next_fit', 'best_fit', 'harmonic']
-offline_algos = ['first_fit_d', 'best_fit_d', 'harmonic_d']
+online_algos = ['next_fit', 'first_fit', 'best_fit', 'harmonic']
+#offline_algos = ['next_fit_d', 'first_fit_d', 'best_fit_d', 'harmonic_d']
+offline_algos = [algo+'_d' for algo in online_algos]
 model_names = online_algos + offline_algos
 parser = argparse.ArgumentParser(description='Different algos to solve the binpacking problem.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-l', '--liquid', help='If the items act as liquids (their shape is irrelevant)', action='store_true')
@@ -49,10 +50,10 @@ if __name__ == '__main__':
 		ml_name = sub(r' d$', ' decreasing', ml_name)
 		models_available[model] = dict()
 		models_available[model]['name'] = ml_name
-		if model == 'first_fit_d':
-			models_available[model]['fun'] = first_fit_decreasing
-		else:
-			models_available[model]['fun'] = globals()[model.replace('_d', '')]
+#		if model == 'first_fit_d':
+#			models_available[model]['fun'] = first_fit_decreasing
+#		else:
+		models_available[model]['fun'] = globals()[model.replace('_d', '')]
 		models_available[model]['is_offline'] = model in offline_algos
 		models_available[model]['is_harmonic'] = 'harmonic' in model
 	models_to_use = list()
@@ -76,8 +77,12 @@ if __name__ == '__main__':
 		items_offline = list()
 		for index, row in data_sorted.iterrows():
 			items_offline.append(Item(row[0], row[1], Decimal(row[2]), Decimal(row[3]), Decimal(row[4])))
+	did_switch = [False, False]
 	for model in models_to_use:
-		print('\033[1m'+models_available[model]['name']+'\033[m')
+		if not did_switch[models_available[model]['is_offline']]:
+			print('\033[94m'+('OFFLINE' if models_available[model]['is_offline'] else 'ONLINE')+'\033[m')
+			did_switch[models_available[model]['is_offline']] = True
+		print('\033[1;4m'+models_available[model]['name']+'\033[m')
 		to_use = items_offline.copy() if models_available[model]['is_offline'] else items.copy()
 		for i in range(1, 4):
 			if args.dimension in (-1, i):
@@ -93,7 +98,7 @@ if __name__ == '__main__':
 					#print(f'\033[2m{sum([len(b) for b in cleaned_bins])}\033[m wagons utilisés')
 				else:
 					bins = models_available[model]['fun'](to_use)
-				print(f'\033[2m{len(bins)}\033[m wagons utilisés')
+				print(f'\033[3m{len(bins)}\033[m wagons utilisés')
 				#print(f'Remaining volume: {sum([b.get_remaining() for b in bins])}')
 				print(f'Fait en {time()-start}s')
 				if any([True for b in bins if b.get_remaining()<0]):
