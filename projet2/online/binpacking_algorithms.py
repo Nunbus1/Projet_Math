@@ -91,7 +91,7 @@ def best_fit(items):
 
 	return bins
 
-def harmonic_k(a, M=10):
+def harmonic(a, M=10):
 	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
 	m_k = [0 for _ in range(M+1)]
 	bins = [[Bin(dimension, list(), contains_liquid)] for k in range(M+1)]
@@ -150,21 +150,3 @@ def first_fit_decreasing(items):
 		pool.join()
 
 	return bins
-
-#def best_fit_decreasing(items):
-#	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
-#	def use_result(bins, i, best_bin, result):
-#		if result[0] and (best_bin is None or bins[i].get_used_volume() < best_bin.get_used_volume()):
-#			return bins[i], result
-#		else:
-#			return (False,)
-#
-#	bins = list()
-#	bins.append(Bin(dimension, list(), contains_liquid))
-#	mlt_cond = mlt_proc and dimension != 1
-#	if mlt_cond:
-#		batch_size = 4*mp.cpu_count()
-#		pool = mp.Pool()
-#	for item in items:
-#		best_bin = None
-#		best
