@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from decimal import *
 from functools import reduce
 import settings
@@ -8,10 +7,7 @@ class Item:
 	def __init__(self, numero, nom, x, y, z):
 		self.numero = numero
 		self.nom = nom
-		self.x = x
-		self.y = y
-		self.z = z
-		self.dims = (x, y, z)
+		self.dims = [x, y, z]
 		self.position = [None, None, None]
 		self.rotation = [0, 0, 0]
 
@@ -45,4 +41,4 @@ class Item:
 		return res
 
 	def __repr__(self):
-		return f"<Item[{self.numero}] '{self.nom}' ({self.x}, {self.y}, {self.z})>"
+		return f"<Item[{self.numero}] '{self.nom}' {self.dims}>"

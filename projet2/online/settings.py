@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 def init():
 	global dimension, contains_liquid, mlt_proc, precision, is_offline
 	dimension = 1

@@ -1,9 +1,9 @@
-#!/usr/bin/python3
 from classes.Item import Item
 from classes.Bin import Bin
 from math import floor
 from birdseye import eye
 from decimal import *
+from functools import reduce
 import multiprocessing as mp
 import settings
 
@@ -14,8 +14,42 @@ def drange(x, y, jump): # From: https://stackoverflow.com/a/7267280
 		yield x
 		x += jump
 
-#def auto_turn(item):
-#	return
+def auto_turn(item): # OPT 1
+	return
+	dimension, contains_liquid, _, _, _ = settings.get_all()
+	if dimension == 1 or contains_liquid:
+		return
+	esb, egi = list(), list() # Espace, Smallest/Greatest, Bin/Item
+	eb = Bin.dims[:dimension].copy()
+	ei = item.dims[:dimension].copy()
+	for d in range(dimension-1):
+		sb = min(eb[:dimension])
+		gi = max(ei[:dimension])
+		esb.append(sb)
+		egi.append(gi)
+		eb.remove(sb)
+		ei.remove(gi)
+	if reduce(lambda x, y: x*y, egi) > reduce(lambda x, y: x*y, esb):
+		return
+	eb = Bin.dims[:dimension].copy()
+	ei = item.dims[:dimension].copy()
+	s_indexes, g_indexes = list(), list()
+	for d in range(dimension-1):
+		s_indexes.append(eb.index(esb[d]))
+		g_indexes.append(ei.index(egi[d]))
+		eb[s_indexes[-1]] = Decimal('Infinity')
+		ei[g_indexes[-1]] = Decimal('Infinity')
+	s_indexes.sort()
+	g_indexes.sort()
+	if s_indexes == g_indexes: # Colinéaires
+		return
+	missing = list()
+	missing.append([m for m in range(3) if m not in g_indexes][0])
+	missing.append([m for m in range(3) if m not in s_indexes][0])
+	a = item.dims[missing[1]]
+	for d in range(len(s_indexes)):
+		item.dims[g_indexes[d]] = item.dims[s_indexes[d]]
+	item.dims[missing[0]] = a
 
 def try_place(current_bin, item):
 	dimension, contains_liquid, mlt_proc, resolution, is_offline = settings.get_all()
@@ -34,18 +68,18 @@ def try_place(current_bin, item):
 			n_pos = pos.copy()
 			n_pos.append(0)
 			i_start = Decimal('0')
-#			if dimension-dim+1 == 1:
-#				items_test = current_bin.items.copy()
-#				while items_test != []:
-#					fits, it = current_binn.do_test_gap(items_test, itemm.dims)
-#					if not fits:
-#						i_start += it.position[0]
-#						try:
-#							items_test.remove(it)
-#						except ValueError:
-#							pass
-#					else:
-#						break
+			if dimension-dim+1 == 1: # OPT 2
+				items_test = current_bin.items.copy()
+				while items_test != []:
+					fits, it = current_binn.do_test_gap(items_test, itemm.dims)
+					if not fits:
+						i_start += it.position[0]
+						try:
+							items_test.remove(it)
+						except ValueError:
+							pass
+					else:
+						break
 			#for i in range(i_start, int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/resolution)):
 			for i in drange(i_start, current_binn.dims[dimension-dim]-itemm.dims[dimension-dim]+1, resolution):
 				n_pos[-1] = i
@@ -65,6 +99,7 @@ def next_fit(items):
 	bin_i = 0
 	bins.append(Bin(dimension, list(), contains_liquid))
 	for item in items:
+		auto_turn(item)
 		res = try_place(bins[bin_i], item)
 		if res[0]:
 			item.set_position(res)
@@ -90,6 +125,7 @@ def best_fit(items):
 		batch_size = 4*mp.cpu_count()
 		pool = mp.Pool()
 	for item in items:
+		auto_turn(item)
 		best_bin = None
 		best_pos = None
 		if mlt_cond:
@@ -124,6 +160,7 @@ def harmonic(a, M=10):
 	bins = [[Bin(dimension, list(), contains_liquid)] for k in range(M+1)]
 	normalize_bin = Bin(dimension, list(), contains_liquid)
 	for i in range(len(a)):
+		auto_turn(a[i])
 		k = floor(normalize_bin.get_total_volume()/a[i].get_volume(dimension)) # Find k & normalize size
 		if k > M: k = M
 		res = try_place(bins[k][-1], a[i])
@@ -153,6 +190,7 @@ def first_fit_decreasing(items):
 		batch_size = 4*mp.cpu_count()
 		pool = mp.Pool()
 	for item in items:
+		auto_turn(item)
 		placed = False
 		if mlt_cond:
 			i=0

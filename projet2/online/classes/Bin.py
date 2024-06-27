@@ -1,14 +1,14 @@
-#!/usr/bin/python3
 from .Item import Item
 from decimal import *
 from functools import reduce
+from copy import deepcopy
 
 
 class Bin:
 	x = Decimal('11.583')
 	y = Decimal('2.294')
 	z = Decimal('2.569')
-	dims = (x, y, z)
+	dims = [x, y, z]
 
 	def __init__(self, dimensions, items, contains_liquid=True):
 		self.dimensions = dimensions
@@ -52,8 +52,8 @@ class Bin:
 					res = res and pos[i] + new_item.dims[i] <= self.dims[i]
 				return res
 			else:
-				inf_item = new_item
-				inf_item.x = Decimal('Infinity')
+				inf_item = deepcopy(new_item)
+				inf_item.dims[0] = Decimal('Infinity')
 				coll_list = list()
 				for it in self.items:
 					if it.overlaps(inf_item, pos, self.dimensions):

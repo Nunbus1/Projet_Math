@@ -78,7 +78,7 @@ if __name__ == '__main__':
 			items_offline.append(Item(row[0], row[1], Decimal(row[2]), Decimal(row[3]), Decimal(row[4])))
 	for model in models_to_use:
 		print('\033[1m'+models_available[model]['name']+'\033[m')
-		to_use = items_offline if models_available[model]['is_offline'] else items
+		to_use = items_offline.copy() if models_available[model]['is_offline'] else items.copy()
 		for i in range(1, 4):
 			if args.dimension in (-1, i):
 				start = time()
@@ -88,12 +88,16 @@ if __name__ == '__main__':
 				if models_available[model]['is_harmonic']:
 					ttl_vol = Bin(i, list(), settings.contains_liquid).get_total_volume()
 					bins = models_available[model]['fun'](to_use, int(len(items)/(2*i)))
-					cleaned_bins = [b for b in bins if b[0].items != []]
-					print(f'\033[2m{sum([len(b) for b in cleaned_bins])}\033[m wagons utilisés')
+					cleaned_bins = [b for bs in bins if bs[0].items != [] for b in bs]
+					bins = cleaned_bins
+					#print(f'\033[2m{sum([len(b) for b in cleaned_bins])}\033[m wagons utilisés')
 				else:
 					bins = models_available[model]['fun'](to_use)
-					print(f'\033[2m{len(bins)}\033[m wagons utilisés')
+				print(f'\033[2m{len(bins)}\033[m wagons utilisés')
+				#print(f'Remaining volume: {sum([b.get_remaining() for b in bins])}')
 				print(f'Fait en {time()-start}s')
+				if any([True for b in bins if b.get_remaining()<0]):
+					print('Breaks physics')
 				print()
 			if args.show and i == 3 and not args.liquid:
 				affichage.plot_bins_on_sheet(bins)

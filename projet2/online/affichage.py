@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from classes.Item import Item
