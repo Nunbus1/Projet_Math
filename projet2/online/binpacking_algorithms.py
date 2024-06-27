@@ -9,19 +9,46 @@ import settings
 
 
 # UTILS
+def drange(x, y, jump): # From: https://stackoverflow.com/a/7267280
+	while x < y:
+		yield x
+		x += jump
+
+#def auto_turn(item):
+#	return
+
 def try_place(current_bin, item):
-	dimension, contains_liquid, mlt_proc, resolution = settings.get_all()
+	dimension, contains_liquid, mlt_proc, resolution, is_offline = settings.get_all()
 	if dimension != 1 and not contains_liquid:
 		def travel_axis(current_binn, itemm, dim, pos):
 			if dim == 0:
 				if current_binn.can_fit(itemm, pos):
+					if not is_offline:
+						if current_binn.can_fit(itemm, pos, False, True):
+							return (True, pos)
+						else:
+							return (False,)
 					return (True, pos)
 				else:
 					return (False,)
 			n_pos = pos.copy()
 			n_pos.append(0)
-			for i in range(int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/resolution)):
-				n_pos[-1] = resolution*i
+			i_start = Decimal('0')
+#			if dimension-dim+1 == 1:
+#				items_test = current_bin.items.copy()
+#				while items_test != []:
+#					fits, it = current_binn.do_test_gap(items_test, itemm.dims)
+#					if not fits:
+#						i_start += it.position[0]
+#						try:
+#							items_test.remove(it)
+#						except ValueError:
+#							pass
+#					else:
+#						break
+			#for i in range(i_start, int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/resolution)):
+			for i in drange(i_start, current_binn.dims[dimension-dim]-itemm.dims[dimension-dim]+1, resolution):
+				n_pos[-1] = i
 				res = travel_axis(current_binn, itemm, dim-1, n_pos)
 				if res[0]:
 					return res
@@ -33,7 +60,7 @@ def try_place(current_bin, item):
 
 # ONLINE
 def next_fit(items):
-	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _, _ = settings.get_all()
 	bins = list()
 	bin_i = 0
 	bins.append(Bin(dimension, list(), contains_liquid))
@@ -49,7 +76,7 @@ def next_fit(items):
 	return bins
 
 def best_fit(items):
-	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _, _ = settings.get_all()
 	def use_result(bins, i, best_bin, result):
 		if result[0] and (best_bin is None or bins[i].get_used_volume() < best_bin.get_used_volume()):
 			return bins[i], result
@@ -92,7 +119,7 @@ def best_fit(items):
 	return bins
 
 def harmonic(a, M=10):
-	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _, _ = settings.get_all()
 	m_k = [0 for _ in range(M+1)]
 	bins = [[Bin(dimension, list(), contains_liquid)] for k in range(M+1)]
 	normalize_bin = Bin(dimension, list(), contains_liquid)
@@ -111,7 +138,7 @@ def harmonic(a, M=10):
 
 # OFFLINE
 def first_fit_decreasing(items):
-	dimension, contains_liquid, mlt_proc, _ = settings.get_all()
+	dimension, contains_liquid, mlt_proc, _, _ = settings.get_all()
 	def use_result(bins, i, item, result):
 		placed = result[0]
 		if placed:
