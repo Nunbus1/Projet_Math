@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	models_available = dict()
 	for model in model_names:
 		ml_name = model.replace('_', ' ').capitalize()
-		ml_name = model.replace('Harmonic', 'Harmonic-k')
+		ml_name = ml_name.replace('Harmonic', 'Harmonic-k')
 		ml_name = sub(r' d$', ' decreasing', ml_name)
 		models_available[model] = dict()
 		models_available[model]['name'] = ml_name
@@ -77,23 +77,24 @@ if __name__ == '__main__':
 		for index, row in data_sorted.iterrows():
 			items_offline.append(Item(row[0], row[1], Decimal(row[2]), Decimal(row[3]), Decimal(row[4])))
 	for model in models_to_use:
-		print(models_available[model]['name'])
+		print('\033[1m'+models_available[model]['name']+'\033[m')
 		to_use = items_offline if models_available[model]['is_offline'] else items
 		for i in range(1, 4):
 			if args.dimension in (-1, i):
 				start = time()
 				settings.dimension = i
+				settings.is_offline = models_available[model]['is_offline']
+				print(f'Dimension {i}')
 				if models_available[model]['is_harmonic']:
 					ttl_vol = Bin(i, list(), settings.contains_liquid).get_total_volume()
 					bins = models_available[model]['fun'](to_use, int(len(items)/(2*i)))
 					cleaned_bins = [b for b in bins if b[0].items != []]
-					print(
-						sum([len(b) for b in bins]),
-						sum([len(b) for b in cleaned_bins])
-					)
+					print(f'\033[2m{sum([len(b) for b in cleaned_bins])}\033[m wagons utilisés')
 				else:
 					bins = models_available[model]['fun'](to_use)
-					print(len(bins))
-				print(i, time()-start)
-			if args.show:
+					print(f'\033[2m{len(bins)}\033[m wagons utilisés')
+				print(f'Fait en {time()-start}s')
+				print()
+			if args.show and i == 3 and not args.liquid:
 				affichage.plot_bins_on_sheet(bins)
+		print()
