@@ -15,7 +15,6 @@ from re import sub
 
 
 online_algos = ['next_fit', 'first_fit', 'best_fit', 'harmonic']
-#offline_algos = ['next_fit_d', 'first_fit_d', 'best_fit_d', 'harmonic_d']
 offline_algos = [algo+'_d' for algo in online_algos]
 model_names = online_algos + offline_algos
 parser = argparse.ArgumentParser(description='Different algos to solve the binpacking problem.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -53,9 +52,6 @@ if __name__ == '__main__':
 		ml_name = sub(r' d$', ' decreasing', ml_name)
 		models_available[model] = dict()
 		models_available[model]['name'] = ml_name
-#		if model == 'first_fit_d':
-#			models_available[model]['fun'] = first_fit_decreasing
-#		else:
 		models_available[model]['fun'] = globals()[model.replace('_d', '')]
 		models_available[model]['is_offline'] = model in offline_algos
 		models_available[model]['is_harmonic'] = 'harmonic' in model
@@ -63,7 +59,7 @@ if __name__ == '__main__':
 	if args.model == 'all':
 		models_to_use = model_names
 	elif args.model == 'best':
-		models_to_use.append('best_fit')
+		models_to_use.append('first_fit')
 		models_to_use.append('first_fit_d')
 	else:
 		models_to_use.append(args.model)
@@ -98,11 +94,9 @@ if __name__ == '__main__':
 					bins = models_available[model]['fun'](to_use, int(len(items)/(2*i)))
 					cleaned_bins = [b for bs in bins if bs[0].items != [] for b in bs]
 					bins = cleaned_bins
-					#print(f'\033[2m{sum([len(b) for b in cleaned_bins])}\033[m wagons utilisés')
 				else:
 					bins = models_available[model]['fun'](to_use)
 				print(f'\033[3m{len(bins)}\033[m wagons utilisés')
-				#print(f'Remaining volume: {sum([b.get_remaining() for b in bins])}')
 				print(f'Fait en {time()-start}s')
 				if any([True for b in bins if b.get_remaining()<0]):
 					print('Too many items in bin')

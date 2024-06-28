@@ -19,7 +19,7 @@ def drange(x, y, jump): # From: https://stackoverflow.com/a/7267280
 
 def auto_turn(item, gap=None): # OPT 1
 	dimension, contains_liquid, _, _, _, opti = settings.get_all()
-	if 1 not in opti and 3 not in opti:
+	if (1 not in opti and gap != None) and (3 not in opti and gap == None):
 		return False
 	if dimension == 1 or contains_liquid:
 		return False
@@ -65,29 +65,21 @@ def auto_turn(item, gap=None): # OPT 1
 	item.dims[missing[0]] = a
 	return True
 
-#@eye
 def try_place(current_bin, item):
 	dimension, contains_liquid, mlt_proc, resolution, is_offline, opti = settings.get_all()
 	if dimension != 1 and not contains_liquid:
 		if 3 in opti:
-			#current_bin.opti3(item)
 			gaps = current_bin.gaps
-#			print(gaps)
 			sorted_gaps = sorted([gap for gap in current_bin.gaps], key=lambda gap: gap.get_volume())
-			print(sorted_gaps)
-			print(item)
 			for gap in sorted_gaps:
-				if any([d < 0 for d in gap.dim]):
-					print(toto)
-				if gap.get_volume() >= item.get_volume(dimension):
-					res = auto_turn(item, gap)
+				pseudo_item = deepcopy(item)
+				if gap.get_volume() >= pseudo_item.get_volume(dimension):
+					res = auto_turn(pseudo_item, gap)
 					if res:
-						#can_fit = all([gap.dim[i] >= item.dims[i] for i in range(dimension)])
-						#current_bin.remove_gap(gap)
-						can_fit = current_bin.can_fit(item, gap.pos, False, True)
-						if can_fit:
+						can_fit = current_bin.can_fit(pseudo_item, gap.pos, False, True)
+						if can_fit and all([gap.dim[i] >= pseudo_item.dims[i] for i in range(dimension)]):
 							current_bin.selected_gap = gap
-							return (True, gap.pos)
+							return (True, gap.pos, pseudo_item.dims)
 			return (False,)
 		else:
 			def travel_axis(current_binn, itemm, dim, pos):
@@ -117,7 +109,6 @@ def try_place(current_bin, item):
 									pass
 							else:
 								break
-				#for i in range(i_start, int((int(current_binn.dims[dimension-dim]-itemm.dims[dimension-dim])+1)/resolution)):
 				for i in drange(i_start, current_binn.dims[dimension-dim]-itemm.dims[dimension-dim]+1, resolution):
 					n_pos[-1] = i
 					res = travel_axis(current_binn, itemm, dim-1, n_pos)
@@ -125,11 +116,11 @@ def try_place(current_bin, item):
 						return res
 				return (False,)
 			pseudo_item = deepcopy(item)
-			for dims in itertools.permutations(pseudo_item.dims[:dimension]):
+			cut_dim = pseudo_item.dims[:dimension]
+			for dims in itertools.permutations(cut_dim):
 				dims = list(dims)
 				pseudo_item.dims = dims
-				pseudo_item.dims.append(item.dims[2])
-				#print(dimension, dims)
+				if dimension == 2: pseudo_item.dims.append(item.dims[2])
 				res = travel_axis(current_bin, pseudo_item, dimension, [])
 				if res[0]:
 					return (res[0], res[1], dims)
@@ -138,7 +129,7 @@ def try_place(current_bin, item):
 		return current_bin.can_fit(item, None, True)
 
 
-# ONLINE
+# Algorithmes
 def next_fit(items):
 	dimension, contains_liquid, mlt_proc, _, _, opti = settings.get_all()
 	bins = list()
@@ -146,9 +137,7 @@ def next_fit(items):
 	bins.append(Bin(dimension, list(), contains_liquid))
 	with_gap = 3 in opti
 	for item in items:
-#		if bin_i == 9:
-#			print(toto)
-		auto_turn(item)
+		if 1 in opti: auto_turn(item)
 		res = try_place(bins[bin_i], item)
 		if res[0]:
 			item.set_position(res)
@@ -158,7 +147,6 @@ def next_fit(items):
 			item.set_position((None,[0]*dimension))
 			bins.append(Bin(dimension, list(), contains_liquid))
 			bins[-1].add_item(item, with_gap)
-			#bins.append(Bin(dimension, [item], contains_liquid))
 			bin_i += 1
 	return bins
 
@@ -180,7 +168,7 @@ def first_fit(items):
 		batch_size = 4*mp.cpu_count()
 		pool = mp.Pool()
 	for item in items:
-		auto_turn(item)
+		if 1 in opti: auto_turn(item)
 		placed = False
 		if mlt_cond:
 			i=0
@@ -223,7 +211,7 @@ def best_fit(items):
 		batch_size = 4*mp.cpu_count()
 		pool = mp.Pool()
 	for item in items:
-		auto_turn(item)
+		if 1 in opti: auto_turn(item)
 		best_bin = None
 		best_res = None
 		if mlt_cond:
@@ -261,7 +249,7 @@ def harmonic(a, M=10):
 	bins = [[Bin(dimension, list(), contains_liquid)] for k in range(M+1)]
 	normalize_bin = Bin(dimension, list(), contains_liquid)
 	for i in range(len(a)):
-		auto_turn(a[i])
+		if 1 in opti: auto_turn(a[i])
 		k = floor(normalize_bin.get_total_volume()/a[i].get_volume(dimension)) # Find k & normalize size
 		if k > M: k = M
 		res = try_place(bins[k][-1], a[i])

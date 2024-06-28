@@ -40,7 +40,6 @@ def plot_dim2(bins):
 	for bin_index, bin_ in enumerate(bins):
 		ax = axs[bin_index]
 		for j, item in enumerate(bin_.items):
-			#longueur, largeur, x, y = item
 			longueur = item.dims[0]
 			largeur = item.dims[1]
 			x = item.position[0]

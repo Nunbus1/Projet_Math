@@ -26,10 +26,6 @@ class Item:
 
 	def overlaps(self, item, pos, dimension_):
 		res = False
-#		print(pos)
-#		print(item.dims)
-#		print(self.position)
-#		print(self.dims)
 		for i in range(dimension_):
 			res = res or (pos[i] + item.dims[i] <= self.position[i] or self.position[i] + self.dims[i] <= pos[i])
 		return not res
@@ -48,4 +44,4 @@ class Item:
 		return coll_list
 
 	def __repr__(self):
-		return f"<Item[{self.numero}] '{self.nom}' {self.dims}>"
+		return f"<Item[{self.numero}] '{self.nom}' dims:{self.dims} pos:{self.position}>"
