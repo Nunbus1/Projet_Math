@@ -22,7 +22,7 @@ class Bin:
 		self.total_volume = Decimal(reduce(lambda x, y: x*y, self.dims[:self.dimensions]))
 		g = Gap(self.dimensions)
 		g.dim[0] = Bin.dims[0]
-		g.dim[1] = Bin.dims[1]
+		if self.dimensions == 2: g.dim[1] = Bin.dims[1]
 		if self.dimensions == 3: g.dim[2] = Bin.dims[2]
 		self.gaps = [g]
 		self.selected_gap = g

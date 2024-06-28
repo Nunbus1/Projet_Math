@@ -9,24 +9,20 @@ class Item:
 		self.nom = nom
 		self.dims = [x, y, z]
 		self.position = [None, None, None]
-		self.rotation = [0, 0, 0]
 
 	def set_position(self, res):
 		if (not settings.contains_liquid) and settings.dimension > 1:
 			self.position = res[1]
 
-	def set_rotation(self, res): # Si dimension == 2, seulement la rotation en z est possible
+	def set_dims(self, res):
 		if (not settings.contains_liquid) and settings.dimension > 1:
-			self.rotation = res[1]
+			self.dims = res[2]
 
 	def get_volume(self, dim_cut):
 		return Decimal(reduce(lambda x, y: x*y, self.dims[:dim_cut]))
 
 	def get_position(self):
 		return self.position
-
-	def get_rotation(self):
-		return self.rotation
 
 	def overlaps(self, item, pos, dimension_):
 		res = False

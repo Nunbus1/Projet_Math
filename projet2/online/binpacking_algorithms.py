@@ -1,11 +1,13 @@
 from classes.Item import Item
 from classes.Gap import Gap
 from classes.Bin import Bin
+from copy import deepcopy
 from math import floor
 from birdseye import eye
 from decimal import *
 from functools import reduce
 import multiprocessing as mp
+import itertools
 import settings
 
 
@@ -122,7 +124,16 @@ def try_place(current_bin, item):
 					if res[0]:
 						return res
 				return (False,)
-			return travel_axis(current_bin, item, dimension, [])
+			pseudo_item = deepcopy(item)
+			for dims in itertools.permutations(pseudo_item.dims[:dimension]):
+				dims = list(dims)
+				pseudo_item.dims = dims
+				pseudo_item.dims.append(item.dims[2])
+				#print(dimension, dims)
+				res = travel_axis(current_bin, pseudo_item, dimension, [])
+				if res[0]:
+					return (res[0], res[1], dims)
+			return (res[0], None, None)
 	else:
 		return current_bin.can_fit(item, None, True)
 
@@ -141,6 +152,7 @@ def next_fit(items):
 		res = try_place(bins[bin_i], item)
 		if res[0]:
 			item.set_position(res)
+			item.set_dims(res)
 			bins[bin_i].add_item(item, with_gap)
 		else:
 			item.set_position((None,[0]*dimension))
@@ -157,6 +169,7 @@ def first_fit(items):
 		placed = result[0]
 		if placed:
 			item.set_position(result)
+			item.set_dims(result)
 			bins[i].add_item(item, with_gap)
 		return placed
 
@@ -212,27 +225,28 @@ def best_fit(items):
 	for item in items:
 		auto_turn(item)
 		best_bin = None
-		best_pos = None
+		best_res = None
 		if mlt_cond:
 			i=0
 			for result in pool.starmap(try_place, [(b, item) for b in bins], chunksize=4):
 				best = use_result(bins, i, best_bin, result)
 				if best[0] != False:
-					best_bin, best_pos = best
+					best_bin, best_res = best
 				i += 1
 		else:
 			for i in range(len(bins)):
 				result = try_place(bins[i], item)
 				best = use_result(bins, i, best_bin, result)
 				if best[0] != False:
-					best_bin, best_pos = best
+					best_bin, best_res = best
 		if best_bin is None:
 			item.set_position((None,[0]*dimension))
 			new_bin = Bin(dimension, list(), contains_liquid)
 			new_bin.add_item(item, with_gap)
 			bins.append(new_bin)
 		else:
-			item.set_position(best_pos)
+			item.set_position(best_res)
+			item.set_dims(best_res)
 			best_bin.add_item(item, with_gap)
 	if mlt_cond:
 		pool.close()
@@ -253,6 +267,7 @@ def harmonic(a, M=10):
 		res = try_place(bins[k][-1], a[i])
 		if res[0]:
 			a[i].set_position(res)
+			a[i].set_dims(res)
 			bins[k][-1].add_item(a[i], with_gap)
 		else:
 			a[i].set_position((None,[0]*dimension))
