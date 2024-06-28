@@ -11,8 +11,11 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 chemin_fichier = '/../data/Données marchandises.xlsx'
 
 # Pour ajuster le chemin d'accès
+#Déterminer le répertoire du script
 script_dir = os.path.dirname(os.path.abspath(__file__))
+# Ajuster les chemins en fonction du système d'exploitation
 script_dir, file_dir = getPath(script_dir, chemin_fichier)
+#Lire le fichier Excel
 data = pd.read_excel(os.path.join(script_dir + chemin_fichier))
 
 # Définir les dimensions maximales du conteneur (en mètres)
@@ -48,21 +51,30 @@ def placer_dans_volume(conteneur, longueur, largeur, hauteur, x, y, z):
         int(z*resolution):int((z + hauteur)*resolution)] = 1
 
 def first_fit_decreasing_3d(data, bin_dims):
+
+    #Calcul du volume de chaque marchandise et tri décroissant par volume
     data['Volume'] = data.apply(calculate_volume, axis=1)
     data_sorted = data.sort_values(by='Volume', ascending=False)
-    
+    #Initialisation des conteneurs
     bins = []
+    #Parcours de chaque marchandise trié par volume décroissant
     for _, item in data_sorted.iterrows():
         item_dims = (item['Longueur'], item['Largeur'], item['Hauteur'])
         placed = False
 
+        #Parcours des conteneurs existants pour essayer de placer la marchandise
         for bin_index, bin in enumerate(bins):
+            #Génère toutes les rotations possibles de la marchandise
             for rotation in generate_rotations(item_dims):
+                #Parcours de toutes les positions possibles dans le conteneur pour chaque rotation de la marchandise
                 for x in np.arange(0, bin_dims[0] - rotation[0], 1/resolution):
                     for y in np.arange(0, bin_dims[1] - rotation[1], 1/resolution):
                         for z in np.arange(0, bin_dims[2] - rotation[2], 1/resolution):
+                            #Vérifie si la marchandise peut être placé à cette position dans le conteneur
                             if peut_placer_volume(bin['matrix'], *rotation, x, y, z):
+                                #Place la marchandise dans le conteneur
                                 placer_dans_volume(bin['matrix'], *rotation, x, y, z)
+                                # Enregistre les informations sur la marchandise placé dans le conteneur
                                 bin['items'].append({'dimensions': rotation, 'position': (x, y, z)})
                                 placed = True
                                 break
@@ -72,16 +84,18 @@ def first_fit_decreasing_3d(data, bin_dims):
                         break
                 if placed:
                     break
-        
+        #Si la marchandise n'a pas pu être placé dans aucun conteneur existant, crée un nouveau conteneur
         if not placed:
             new_bin_matrix = np.zeros((int(bin_dims[0]*resolution), int(bin_dims[1]*resolution), int(bin_dims[2]*resolution)))
             placer_dans_volume(new_bin_matrix, *item_dims, 0, 0, 0)
             bins.append({'matrix': new_bin_matrix, 'items': [{'dimensions': item_dims, 'position': (0, 0, 0)}]})
-    
-    total_volume = len(bins) * prod(bin_dims)
+    # Calcul des statistiques sur les conteneurs et les marchandises placés
+    total_volume = len(bins) * prod(bin_dims) # Calcul des statistiques sur les conteneurs et les marchandises placés
     used_volume = sum(prod(item['dimensions']) for bin in bins for item in bin['items'])
-    unused_volume = total_volume - used_volume
-    total_items = sum(len(bin['items']) for bin in bins)
+    unused_volume = total_volume - used_volume # Volume non utilisé dans tous les conteneurs
+    total_items = sum(len(bin['items']) for bin in bins)# Nombre total marchandise placés
+
+     # Retourne les conteneurs avec les marchandises placés, ainsi que les statistiques sur les volumes
     return bins, len(bins), total_volume, used_volume, unused_volume, total_items
 
 def plot_bins_on_sheet(bins, bin_dims):

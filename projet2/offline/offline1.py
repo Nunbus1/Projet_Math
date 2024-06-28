@@ -9,8 +9,11 @@ import matplotlib.pyplot as plt
 chemin_fichier = '/../data/Données marchandises.xlsx' 
 
 # Pour ajuster le chemin d'accès
+#Déterminer le répertoire du script
 script_dir = os.path.dirname(os.path.abspath(__file__))
+# Ajuster les chemins en fonction du système d'exploitation
 script_dir, file_dir = getPath(script_dir, chemin_fichier)
+#Lire le fichier Excel
 data = pd.read_excel(os.path.join(script_dir + chemin_fichier))
 
 # Définir les dimensions maximales du conteneur (en mètres)
@@ -18,10 +21,13 @@ bin_dims = (11.583,)
 
 def can_place_in_bin(item_dims, bin, bin_dims, pos):
     for placed_item in bin:
+        #On regarde si il y a un chevauchement avec l'objet qu'on veut placer
+        #Retourne faux si collision, et donc que l'objet ne peux être placer
         if check_overlap(item_dims, placed_item['dimensions'], pos, placed_item['position']):
             return False
     return pos[0] + item_dims[0] <= bin_dims[0]
 
+#Permet de voir si deux objets se chevauche
 def check_overlap(dim1, dim2, pos1, pos2):
     x1 = pos1[0]
     x2 = pos2[0]
@@ -30,14 +36,19 @@ def check_overlap(dim1, dim2, pos1, pos2):
     return not (x1 + lx1 <= x2 or x2 + lx2 <= x1)
 
 def first_fit_decreasing_1d(data, bin_dims):
+    # Liste des conteneurs où les marchandises seront placés
     bins = []
+    ## Parcours des marchandises à placer
     for _, item in data.iterrows():
         item_dims = (item['Longueur'],)
         placed = False
-
+        # Parcours des marchandises à placer
         for bin in bins:
+            #Tentative de placement dans le conteneur actuel
             for x in range(int(bin_dims[0] - item_dims[0]) + 1):
+                # Vérifie si la marchandise peut être placé
                 if can_place_in_bin(item_dims, bin, bin_dims, (x,)):
+                    ## Ajoute la marchandise au conteneur avec sa position
                     bin.append({'dimensions': item_dims, 'position': (x,)})
                     placed = True
                     break
@@ -45,6 +56,7 @@ def first_fit_decreasing_1d(data, bin_dims):
                 break
         
         if not placed:
+            # Crée un nouveau conteneur et place la marchandise au début
             bins.append([{'dimensions': item_dims, 'position': (0,)}])
     
     total_length = len(bins) * bin_dims[0]

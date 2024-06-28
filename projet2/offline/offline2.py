@@ -19,42 +19,54 @@ largeur_maximale = 2.294
 # Resolution pour le grid
 resolution = 10  
 
-# Fonction pour vérifier si un article peut être placé à une position donnée dans la matrice du conteneur
+# Fonction pour vérifier si une marchandise peut être placé à une position donnée dans la matrice du conteneur
 def peut_placer_matrice(conteneur, longueur, largeur, x, y):
     if x + longueur > longueur_maximale or y + largeur > largeur_maximale:
         return False
     return np.all(conteneur[int(x*resolution):int((x + longueur)*resolution), int(y*resolution):int((y + largeur)*resolution)] == 0)
 
-# Fonction pour placer un article dans la matrice du conteneur
+# Fonction pour placer une marchandise dans la matrice du conteneur
 def placer_dans_matrice(conteneur, longueur, largeur, x, y):
     conteneur[int(x*resolution):int((x + longueur)*resolution), int(y*resolution):int((y + largeur)*resolution)] = 1
 
-# Fonction pour générer toutes les rotations possibles d'un article
+# Fonction pour générer toutes les rotations possibles d'une marchandise
 def generate_rotations(longueur, largeur):
     return [(longueur, largeur), (largeur, longueur)]
 
 # First Fit Decreasing algorithm
 def first_fit_decreasing(data, longueur_maximale, largeur_maximale):
+    ## Calcul de l'aire de chaque marchandise et tri décroissant par aire
     data['Area'] = data['Longueur'] * data['Largeur']
     data = data.sort_values(by='Area', ascending=False)
 
+    #Initialisation des conteneurs et des marchandises dans les conteneurs
     conteneurs = []
     items_in_conteneurs = []
+
+    #Conversion des dimensions maximales en entiers selon une résolution donnée
     longueur_maximale_int = int(longueur_maximale * resolution)
     largeur_maximale_int = int(largeur_maximale * resolution)
 
+    #Parcours de chaque marchandise à placer
     for _, marchandise in data.iterrows():
         longueur = marchandise['Longueur']
         largeur = marchandise['Largeur']
         placer = False
 
+        #Parcours des conteneurs existants pour essayer de placer la marchandise
         for i, conteneur in enumerate(conteneurs):
+            #Génère toutes les rotations possibles de la marchandise
             for rotation in generate_rotations(longueur, largeur):
                 r_longueur, r_largeur = rotation
+
+                #Parcours de toutes les positions possibles dans le conteneur
                 for x in range(0, longueur_maximale_int - int(r_longueur * resolution) + 1):
                     for y in range(0, largeur_maximale_int - int(r_largeur * resolution) + 1):
+                        #Vérifie si la marchandise peut être placé à cette position
                         if peut_placer_matrice(conteneur, r_longueur, r_largeur, x / resolution, y / resolution):
+                            #Place la marchandise dans le conteneur
                             placer_dans_matrice(conteneur, r_longueur, r_largeur, x / resolution, y / resolution)
+                            #Enregistre les informations sur la marchandise placé dans les conteneurs
                             items_in_conteneurs[i].append((r_longueur, r_largeur, x / resolution, y / resolution))
                             placer = True
                             break
@@ -64,11 +76,13 @@ def first_fit_decreasing(data, longueur_maximale, largeur_maximale):
                     break
             if placer:
                 break
+        ## Si la marchandise n'a pas pu être placé dans aucun conteneur existant, crée un nouveau conteneur    
         if not placer:
             new_conteneur = np.zeros((longueur_maximale_int, largeur_maximale_int))
             placer_dans_matrice(new_conteneur, longueur, largeur, 0, 0)
             conteneurs.append(new_conteneur)
             items_in_conteneurs.append([(longueur, largeur, 0, 0)])
+    #Retourne les conteneurs avec les marchandises placés et les informations sur les marchandises dans chaque conteneur        
     return conteneurs, items_in_conteneurs
 
 # Préparation des données
