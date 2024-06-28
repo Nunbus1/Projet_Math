@@ -105,10 +105,12 @@ if __name__ == '__main__':
 				#print(f'Remaining volume: {sum([b.get_remaining() for b in bins])}')
 				print(f'Fait en {time()-start}s')
 				if any([True for b in bins if b.get_remaining()<0]):
-					print('Breaks physics')
+					print('Too many items in bin')
+				if any([item.dims[j] > Bin.dims[j] for j in range(i) for b in bins for item in b.items]):
+					print('Item through Bin')
 				if sum([len(b.items) for b in bins]) < len(items):
 					print('Items missing')
 				print()
-			if args.show and i in (2, 3) and not args.liquid:
-				affichage.plot_bins_on_sheet(bins, i)
+				if args.show and i in (2, 3) and not args.liquid:
+					affichage.plot_bins_on_sheet(bins, i)
 		print()

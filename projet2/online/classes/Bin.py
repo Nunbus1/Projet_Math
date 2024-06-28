@@ -33,10 +33,10 @@ class Bin:
 	def add_item(self, item, with_gap=False):
 		if with_gap:
 			self.remove_gap(self.selected_gap)
-		self.items.append(item)
-		self.used_volume += item.get_volume(self.dimensions)
 		if with_gap:
 			self.opti3(item)
+		self.items.append(item)
+		self.used_volume += item.get_volume(self.dimensions)
 
 	def get_items(self):
 		return self.items
@@ -87,7 +87,7 @@ class Bin:
 	def get_remaining(self):
 		return self.get_total_volume() - self.get_used_volume()
 
-	@eye
+#	@eye
 	def opti3(self, new_item, pos=None):
 		if not self.items:
 			g = Gap(self.dimensions)
@@ -107,8 +107,8 @@ class Bin:
 #					if pos:
 #						pseudo_item.position = pos
 				max_pos = max([item.position[d-1] + item.dims[d-1] for item in items_done])
-				#pseudo_item.position[0] = max_pos if max_pos <= pseudo_item.position[0]+pseudo_item.dims[0] else pseudo_item.position[0] # Test is guardrail
-				pseudo_item.position[d-1] = max_pos
+				pseudo_item.position[0] = max_pos if max_pos + pseudo_item.position[0]+pseudo_item.dims[0] <= Bin.dims[0] else pseudo_item.position[0] # Test is guardrail
+#				pseudo_item.position[d-1] = max_pos
 				item_test = pseudo_item
 			else:
 				item_test = deepcopy(new_item)
@@ -124,6 +124,7 @@ class Bin:
 				for gap in new_gaps:
 					gap.pos[d-1] = item_test.position[d-1] # y value might be changed in merge, can't remember
 					gap.dim[d-1] = item_test.dims[d-1]
+#				print(new_gaps)
 				gaps.extend(new_gaps)
 #					for g in gaps:
 #						print(g)
@@ -132,8 +133,10 @@ class Bin:
 			#	return # No more space :(
 		items_done.append(new_item)
 		t = items_tri[-1]
-		merge(gaps, items_tri, self.dimensions)
-		extend(gaps, items_tri, self.dimensions)
+#		print(gaps)
+#		print(self.gaps)
+#		print(self.selected_gap)
+#		print(toto)
 		if t.position[0] + t.dims[0] <= Bin.dims[0]:
 			g = Gap(self.dimensions)
 			g.pos[0] = t.position[0] + t.dims[0]
@@ -142,63 +145,112 @@ class Bin:
 			if self.dimensions == 3: g.dim[2] = Bin.dims[2]
 			if self.dimensions == 3: g.pos[2] = Decimal('0')
 			gaps.append(g)
+		merge(gaps, items_tri, self.dimensions)
+		extend(gaps, items_tri, self.dimensions)
 		self.gaps = deepcopy(gaps)
 
 
 # TODO: move to somewhere smart
+#@eye
 def find_gap(gaps, item, items_coll, border_min=Decimal('0'), border_max=Decimal('0'), dimension=2, current_d=1): # TODO to n-dimensions (is easy)
 	items_coll_prev = [it for it in items_coll if it.position[current_d] < item.position[current_d]]
 	items_coll_post = [it for it in items_coll if it.position[current_d] > item.position[current_d]+item.dims[current_d]]
 	i_c_p = [items_coll_prev, items_coll_post]
+#	print(i_c_p)
 	for i in range(len(i_c_p)):
+#		print('?', i_c_p[i])
 		if not i_c_p[i]:
+#			print(border_min, border_max)
 			#if border_max - border_min >= Decimal('0.01'): # Precision max for items
-			if border_max - border_min == Decimal('0'):
+			if border_max - border_min > Decimal('0'):
 				gap = Gap(dimension)
 				gap.pos[current_d] = border_min
 				gap.dim[current_d] = border_max - border_min
 				gaps.append(gap)
-		elif sum([it.dims[current_d] for it in i_c_p[i]]) < item.position[current_d] + i*item.dims[current_d]: # Gap present
-			if i == 0:
-				mid_point = item.position[current_d] / 2
-				closest_item = sorted([it for it in items_coll], key=lambda it: abs(it.position[current_d] - mid_point))[0]
-				find_gap(gaps, closest_item, i_c_p[i], border_min, item.position[current_d], dimension, current_d)
+#				print(1, gap)
+#				print(2, gaps)
+		else:
+#			print(sum([it.dims[current_d] for it in i_c_p[i]]))
+#			print(item.position[current_d])
+#			print(i, item.dims[current_d])
+			if not i:
+				i_d_curr = 0
 			else:
-				mid_point = (Bin.dims[current_d] - (item.position[current_d]+item.dims[current_d])) / 2
-				closest_item = sorted([it for it in items_coll], key=lambda it: abs(it.position[current_d] - mid_point))[0]
-				find_gap(gaps, closest_item, i_c_p[i], item.position[current_d]+item.dims[current_d], border_max, dimension, current_d)
+				i_d_curr = item.dims[current_d]
+			if sum([it.dims[current_d] for it in i_c_p[i]]) < item.position[current_d] + i_d_curr: # Gap present
+				if i == 0:
+					mid_point = item.position[current_d] / 2
+					closest_item = sorted([it for it in items_coll], key=lambda it: abs(it.position[current_d] - mid_point))[0]
+					find_gap(gaps, closest_item, i_c_p[i], border_min, item.position[current_d], dimension, current_d)
+				else:
+					mid_point = (Bin.dims[current_d] - (item.position[current_d]+item.dims[current_d])) / 2
+					closest_item = sorted([it for it in items_coll], key=lambda it: abs(it.position[current_d] - mid_point))[0]
+					find_gap(gaps, closest_item, i_c_p[i], item.position[current_d]+item.dims[current_d], border_max, dimension, current_d)
+#	print(gaps)
 
+#@eye
 def merge(gaps, items, dimension):
 	for d in range(dimension):
 		dropped = set()
-		for gap1, gap2 in filter(dropped.isdisjoint, itertools.combinations(gaps, 2)): # From: https://stackoverflow.com/a/16603357
-			if gap1.dim[d] == gap2.dim[d] and gap1.pos[d] == gap2.pos[d]: # Can merge
-				pseudo_item = Item(-1, 'Pseudo_item', 0, 0, 0)
-				pseudo_item.dims[d] = gap1.dim[d]
-				pseudo_item.position[d] = gap1.pos[d]
-				for not_d in [d_ for d_ in range(dimension) if d_ != d]:
-	#					print('Gap1', gap1.pos)
-	#					print('Gap2', gap2.pos)
-	#					print('ps.pos', pseudo_item.position)
-	#					print('Not_d', not_d)
-#					print(gap1.pos)
-#					print(gap2.pos)
-#					print(not_d)
-					pseudo_item.position[not_d] = min(gap1.pos[not_d], gap2.pos[not_d])
-					#pseudo_item.dims[not_d] = max(gap1.pos[not_d]+gap1.dim[not_d], gap2.pos[not_d]+gap2.dim[not_d])-pseudo_item.position[not_d]
-					pseudo_item.dims[not_d] = max(gap1.pos[not_d]+gap1.dim[not_d], gap2.pos[not_d]+gap2.dim[not_d])-pseudo_item.position[not_d]
-				if not pseudo_item.get_collisions(items, pseudo_item.position, dimension): # Can merge :)
-					gaps.remove(gap1) # might break `combinations`
-					gaps.remove(gap2)
-					dropped.update((gap1, gap2))
-					merged_gap = Gap(dimension, pseudo_item.position, pseudo_item.dims)
-					gaps.append(merged_gap)
+		#for gap1, gap2 in filter(dropped.isdisjoint, itertools.combinations(gaps, 2)): # Combinations: https://stackoverflow.com/a/16603357 | Filter: https://stackoverflow.com/a/39240343
+		done_looping = False
+		gaps_removed = False
+		while not done_looping:
+		#for gap1, gap2 in itertools.combinations(gaps, 2): # Combinations: https://stackoverflow.com/a/16603357
+#			print(gaps)
+#			print(len(gaps))
+			if len(gaps) == 1:
+				done_looping = True
+			for i in range(len(gaps)):
+#				print('i', i)
+#				print('len', len(gaps))
+				gap1 = gaps[i]
+	#			print(i)
+				for j in range(i+1, len(gaps)):
+					gap2 = gaps[j]
+#					print(j)
+	#				print('in1')
+					if gap1.dim[d] == gap2.dim[d] and gap1.pos[d] == gap2.pos[d]: # Can merge
+	#					print('in2')
+						pseudo_item = Item(-1, 'Pseudo_item', 0, 0, 0)
+						pseudo_item.dims[d] = gap1.dim[d]
+						pseudo_item.position[d] = gap1.pos[d]
+						for not_d in [d_ for d_ in range(dimension) if d_ != d]:
+			#					print('Gap1', gap1.pos)
+			#					print('Gap2', gap2.pos)
+			#					print('ps.pos', pseudo_item.position)
+			#					print('Not_d', not_d)
+		#					print(gap1.pos)
+		#					print(gap2.pos)
+		#					print(not_d)
+							pseudo_item.position[not_d] = min(gap1.pos[not_d], gap2.pos[not_d])
+							#pseudo_item.dims[not_d] = max(gap1.pos[not_d]+gap1.dim[not_d], gap2.pos[not_d]+gap2.dim[not_d])-pseudo_item.position[not_d]
+							pseudo_item.dims[not_d] = max(gap1.pos[not_d]+gap1.dim[not_d], gap2.pos[not_d]+gap2.dim[not_d])-pseudo_item.position[not_d]
+						if not pseudo_item.get_collisions(items, pseudo_item.position, dimension): # Can merge :)
+							done_looping = False
+							gaps_removed = True
+							gaps.remove(gap1) # does break `combinations`
+							gaps.remove(gap2)
+							dropped.update((gap1, gap2))
+							merged_gap = Gap(dimension, pseudo_item.position.copy(), pseudo_item.dims.copy())
+							gaps.append(merged_gap)
+							break
+						else:
+							done_looping = True
+							gaps_removed = False
+					else:
+						done_looping = True
+						gaps_removed = False
+				if gaps_removed:
+					break
 
+@eye
 def extend(gaps, items, dimension):
 	for i in range(len(gaps)):
 		item_test = Item(-1, 'Item_test', 0, 0, 0)
 		item_test.position = gaps[i].pos.copy()
 		item_test.dims = gaps[i].dim.copy()
+		print('GGGGGGGGGGGGG', gaps[i])
 		for d in range(dimension):
 			item_test.dims[d] = Decimal('Infinity')
 			items_coll = item_test.get_collisions(items, item_test.position, dimension)
@@ -208,12 +260,14 @@ def extend(gaps, items, dimension):
 			else:
 				mid_point = (item_test.position[d]+item_test.dims[d]) / 2 # mid_point of item
 				closest = sorted([it for it in items_coll], key=lambda it: abs(it.position[1] - mid_point))
-#				print(closest)
 				is_trapped = len(closest) >= 2
 				is_below = closest[0].position[d]-mid_point < 0
+				print(closest)
+				print(is_below)
 #				item_test.position[d] = min(closest[0].position[d], closest[1].position[d])
 #				item_test.dims[d] = max(closest[0].position[d]+closest[0].dims[d], closest[1].pos[not_d]+closest[1].dim[not_d])-item_test.pos[not_d]
 				item_test.position[d] = closest[0].position[d]+closest[0].dims[d] if is_trapped else (closest[0].position[d]+closest[0].dims[d] if is_below else 0)
 				item_test.dims[d] = (closest[int(is_trapped)].position[d] if is_trapped else (closest[0].position[d] if not is_below else Bin.dims[d]))-item_test.position[d]
+				print('item_test', item_test)
 		gaps[i].pos = item_test.position[:dimension].copy()
 		gaps[i].dim = item_test.dims[:dimension].copy()
