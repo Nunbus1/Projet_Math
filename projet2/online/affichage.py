@@ -30,7 +30,34 @@ def plot_item(ax, position, dimensions, color):
 	poly3d = Poly3DCollection(faces, facecolors=color, linewidths=1, edgecolors='r', alpha=.25)
 	ax.add_collection3d(poly3d)
 
-def plot_bins_on_sheet(bins):
+def plot_dim2(bins):
+	num_bins = len(bins)
+	num_cols = 4
+	num_rows = (num_bins + num_cols - 1) // num_cols
+	fig, axs = plt.subplots(num_rows, num_cols, figsize=(num_cols * 5, num_rows * 5), constrained_layout=True)
+	colors = plt.cm.tab20.colors
+	axs = axs.flatten()
+	for bin_index, bin_ in enumerate(bins):
+		ax = axs[bin_index]
+		for j, item in enumerate(bin_.items):
+			#longueur, largeur, x, y = item
+			longueur = item.dims[0]
+			largeur = item.dims[1]
+			x = item.position[0]
+			y = item.position[1]
+			color = colors[j % len(colors)]
+			ax.fill([y, y, y + largeur, y + largeur], [x, x + longueur, x + longueur, x], color=color, alpha=0.5)
+		ax.set_xlim(0, Bin.dims[0])
+		ax.set_ylim(0, Bin.dims[1])
+		#ax.invert_yaxis()
+		ax.set_xlabel('Longueur')
+		ax.set_ylabel('Largeur')
+		ax.set_title(f'Conteneur {bin_index + 1}')
+	for j in range(bin_index + 1, len(axs)):
+		fig.delaxes(axs[j])
+	plt.show()
+
+def plot_dim3(bins):
 	num_bins = len(bins)
 	num_cols = 4
 	num_rows = (num_bins + num_cols - 1) // num_cols
@@ -53,3 +80,11 @@ def plot_bins_on_sheet(bins):
 		ax.set_title(f'Wagon {bin_index + 1} - Nombre d\'objets: {len(bin_.items)}')
 	plt.tight_layout()
 	plt.show()
+
+def plot_bins_on_sheet(bins, dimensions=3):
+	if dimensions == 2:
+		plot_dim2(bins)
+	elif dimensions == 3:
+		plot_dim3(bins)
+	else:
+		print('ERROR')

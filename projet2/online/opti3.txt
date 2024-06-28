@@ -1,0 +1,94 @@
+# Pour l'instant on ignore z
+# Pas oublier le .copy pour les pos/dim, c'est des listes ça peut tout casser
+
+items = items triés par (item.dim.x + item.pos.x) croissant
+items_done = list()
+gaps  = list()
+for item in items:
+	if items_done not empty:
+		pseudo_item = Item(item).copy
+		max_pos = max(items_done.pos.x + items_done.dim.x)
+		pseudo_item.pos.x = max_pos <= pseudo_item.pos.x+pseudo_item.dim.x ? max_pos : pseudo... # Test is guardrail
+		item_test = pseudo_item
+	else:
+		item_test = Item(item).copy
+	items_coll = item_test(y=+inf).collision avec items
+	occupied = somme(items_coll.dim.y)
+	occupied = max(items_coll.dim.y+items_coll.pos.y) # DEPRECATED
+	if occupied <= Bin.dim.y: # We use item_test because it's been troncated (see `if items_done not empty` above)
+		new_gaps = list
+		find_gap(new_gaps, item_test, items_coll, ..)
+		#gap = new Gap
+		for gap in new_gaps:
+			gap.pos.x = item_test.pos.x
+			#gap.pos.y = occupied
+			gap.dim.x = item_test.dim.x
+			#gap.dim.y = Bin.dim.y - occupied
+		gaps.extend(new_gaps)
+		merge(gaps, items) # Maybe better outside of loop, dunno
+	else:
+		Plus de place
+	items_done.append(item)
+extend(gaps, items)
+
+
+fun find_gap(gaps, item, items_coll, border_min=0, border_max=Bin.dim.y):
+	items_coll_prev = it for it in items_coll where it.pos.y < item.pos.y
+	items_coll_post = ... > pos + dim # You can use only pos, is same
+	# test if empty
+	if items_coll_prev is empty: # NEED TO SEE IF GAP PRESENT
+		if border_max - border_min >= 0.01: # Precision max for items
+			gap = new Gap # x coords are set later
+			 gap.pos.y = border_min
+			 gap.dim.y = border_max - border_min
+			gaps.append(gap)
+	if items_coll_post is empty:
+		...
+	if sum(items_coll_prev.dim.y) < item.pos.y: # Gap present
+		# do stuff
+		mid_point = item.pos.y / 2
+		find_gap(gaps, item closest to mid_point, items_coll_prev, border_min, item.pos.y)
+	if sum(items_coll_post.dim.y) < item.pos.y + item.dim.y: # Gap present
+		# do stuff
+		mid_point = (Bin.dim.y - (item.dim.y + item.pos.y))/2
+		find_gap(gaps, item closest to mid_point, items_coll_post, item.pos.y+item.dim.y, border_max)
+
+fun merge(gaps, items):
+	for d in dimension:
+		for gap1, gap2 in combinations(gaps):
+			if gap1.dim[d] == gap2.dim[d] and gap1.pos[d] == gap2.pos[d]: # Can merge
+				pseudo_item = Item()
+				 pseudo_item.dim[d] = gap1.dim[d]
+				 pseudo_item.pos[d] = gap1.pos[d]
+				for not_d in dimension.without(d):
+					pseudo_item.pos[not_d] = min(gap1.pos[not_d], gap2.pos[not_d])
+					pseudo_item.dim[not_d] = max(gap1.pos[not_d]+gap1.dim[not_d], gap2.pos[not_d]+gap2.dim[not_d])-pseudo_item.pos[not_d]
+				if not pseudo_item.overlaps(items): # Can merge :)
+					gaps.remove(gap1) # Maybe it breaks `combinations` dunno
+					gaps.remove(gap2)
+					merged_gap = new Gap
+					 merged_gap.pos = pseudo_item.pos
+					 merged_gap.dim = pseudo_item.dim
+					gaps.append(merged_gap)
+
+fun extend(gaps, items):
+	for gap in gaps: # en python faut passer par les indices, pour pouvoir changer gap
+		item_test = Item() # Can be created outside loop to avoid remaking each time
+		 item_test.pos = gap.pos
+		 item_test.dim = gap.dim
+		for d in dimension:
+			items_coll = item_test(dim[d]=+inf).collision avec items
+			if items_coll is empty:
+				item_test.pos[d] = 0 # 0 is minimum of Bin
+				item_test.dim[d] = Bin.dim[d]
+			else:
+				mid_point = (item_test.pos[d]+item_test.dim[d]) / 2 # mid_point of item
+				closest = get items from item_colss where items are closest to mid_point
+				if len(closest) >= 2:
+					item_test.pos[d] = min(closest[0].pos[d], closest[1].pos[d])
+					#item_test.dim[d] = max(closest[0].pos[d]+closest[0].dim[d], closest[1].pos[d]+closest[1].dim[d])-item_test.pos[d]
+					item_test.dim[d] = max(closest[0].pos[d], closest[1].pos[d])-item_test.pos[d]
+				else:
+					... if item is below, dim = Bin.dim.y-..., else ...
+		gap.pos = item_test.pos
+		gap.dim = item_test.dim

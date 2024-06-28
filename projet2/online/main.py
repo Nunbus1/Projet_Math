@@ -8,6 +8,7 @@ import sys
 import os
 from get_path import getPath
 from binpacking_algorithms import *
+from copy import deepcopy
 from time import time
 from decimal import *
 from re import sub
@@ -22,7 +23,8 @@ parser.add_argument('-l', '--liquid', help='If the items act as liquids (their s
 parser.add_argument('-m', '--multi_processing', help='If the program uses multi-processing or not', action='store_true')
 parser.add_argument('-p', '--precision', help='The precision to use to test for collision. Is ignored if `--liquid` is set. Smaller is more precise.', type=Decimal, default=Decimal('1'))
 parser.add_argument('-d', '--dimension', help='Set the dimension you want to see, -1 for all', type=int, choices=[-1, 1, 2, 3], default=-1)
-parser.add_argument('-s', '--show', help='Show a 3D graph of the bins and their contents (only works for 3D)', action='store_true')
+parser.add_argument('-s', '--show', help='Show a 2D/3D graph of the bins and their contents', action='store_true')
+parser.add_argument('-o', '--opti', help='Which optimization to use. `0` is none.', type=int, choices=range(4), action='append', default=[0])
 parser.add_argument('-M', '--model', help="Model to use for the prediction. If `best` is chosen, the program will automatically select the theoretical best algorithm given: whether it's online or offline, and whether `liquid` is set or not", type=str, choices=model_names+['all', 'best'], default='best')
 args = parser.parse_args()
 
@@ -43,6 +45,7 @@ if __name__ == '__main__':
 	settings.contains_liquid = args.liquid
 	settings.mlt_proc = args.multi_processing
 	settings.precision = args.precision
+	settings.opti = args.opti
 	models_available = dict()
 	for model in model_names:
 		ml_name = model.replace('_', ' ').capitalize()
@@ -83,7 +86,7 @@ if __name__ == '__main__':
 			print('\033[94m'+('OFFLINE' if models_available[model]['is_offline'] else 'ONLINE')+'\033[m')
 			did_switch[models_available[model]['is_offline']] = True
 		print('\033[1;4m'+models_available[model]['name']+'\033[m')
-		to_use = items_offline.copy() if models_available[model]['is_offline'] else items.copy()
+		to_use = deepcopy(items_offline) if models_available[model]['is_offline'] else deepcopy(items)
 		for i in range(1, 4):
 			if args.dimension in (-1, i):
 				start = time()
@@ -103,7 +106,9 @@ if __name__ == '__main__':
 				print(f'Fait en {time()-start}s')
 				if any([True for b in bins if b.get_remaining()<0]):
 					print('Breaks physics')
+				if sum([len(b.items) for b in bins]) < len(items):
+					print('Items missing')
 				print()
-			if args.show and i == 3 and not args.liquid:
-				affichage.plot_bins_on_sheet(bins)
+			if args.show and i in (2, 3) and not args.liquid:
+				affichage.plot_bins_on_sheet(bins, i)
 		print()
