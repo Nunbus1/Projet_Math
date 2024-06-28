@@ -23,7 +23,7 @@ print(df_results_B)
 
 #Comparaison des algo A et B
 print("L'algo A est moins rapide que l'algo B, mais il se rapproche le plus possible de poid maximal possible")
-print("L'algo lui est rapide mais n'est pas optimisé, il prends seulement les objets avec le ratio Utilité masse le plus élevé dans l'ordre croissant et il s'arrète avant d'attendre le poid maximal")
+print("L'algo B lui est rapide mais n'est pas optimisé, il prends seulement les objets avec le ratio Utilité masse le plus élevé dans l'ordre croissant et il s'arrète avant d'attendre le poid maximal")
 print()
 print()
 #//////////////////////////////////////////////////
